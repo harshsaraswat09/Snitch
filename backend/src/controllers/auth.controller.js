@@ -4,10 +4,26 @@ import jwt from "jsonwebtoken";
 
 
 
-async function sendTokenResponse(user, res) {
+async function sendTokenResponse(user, res, message) {
     const token = jwt.sign({
         id: user._id
-    }, config.JWT_SECRET)
+    }, config.JWT_SECRET, {
+        expiresIn: "7d"
+    })
+
+    res.cookie("token", token)
+
+    res.status(200).json({
+        message,
+        success: true,
+        user: {
+            id: user._id,
+            email: user.email,
+            contact: user.contact,
+            fullname: user.fullname,
+            role: user.role
+        }
+    })
 }
 
 
@@ -33,8 +49,11 @@ export const register = async(req, res) => {
             email,
             contact,
             password,
-            fullname
+            fullname,
+            role: isSeller ? "seller" : "buyer"
         })
+
+        await sendTokenResponse(user, res, "User registered successfully"))
 
 
 
