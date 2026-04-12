@@ -1,4 +1,4 @@
-import { config } from "dotenv";
+import { config } from "../config/config.js";
 import userModel from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 
@@ -29,7 +29,7 @@ async function sendTokenResponse(user, res, message) {
 
 export const register = async(req, res) => {
 
-    const { email, contact, password, fullname } = req.body
+    const { email, contact, password, fullname, isSeller  } = req.body
 
     try {
         const existingUser = await userModel.findOne({
@@ -53,7 +53,7 @@ export const register = async(req, res) => {
             role: isSeller ? "seller" : "buyer"
         })
 
-        await sendTokenResponse(user, res, "User registered successfully"))
+        await sendTokenResponse(user, res, "User registered successfully")
 
 
 
@@ -64,4 +64,27 @@ export const register = async(req, res) => {
         })
     
     }
+}
+
+export const login = async(req, res) => {
+    const { email, password } = req.body
+
+    const user = await userModel.findOne({email})
+
+    if(!user){
+        return res.status(404).json({
+            message: "User not found"
+        })
+    }
+
+    const isMatch = await user.comparePassword(password)
+
+    if(!isMatch) {
+        return res.status(401).json({
+            message: "Invalid credentials"
+        })
+    }
+
+    await sendTokenResponse(user, res, "User logged in successfully")
+
 }
