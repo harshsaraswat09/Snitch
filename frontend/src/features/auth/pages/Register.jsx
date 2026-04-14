@@ -3,30 +3,29 @@ import { useAuth } from "../hook/useAuth";
 import { useNavigate } from 'react-router';
 
 const EyeOn = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
     <circle cx="12" cy="12" r="3" />
   </svg>
 );
 
 const EyeOff = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
     <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
 
+const inputCls = "bg-transparent border-0 border-b border-black/20 text-sm font-light text-[#1a1a1a] py-2 outline-none placeholder:text-[#c5bdb0] focus:border-[#1a1a1a] transition-colors duration-200 rounded-none w-full";
+const labelCls = "text-[9px] font-medium tracking-[0.2em] uppercase text-[#9a9080] mb-2 block";
+
 const Register = () => {
   const { handleRegister } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    contactNumber: '',
-    email: '',
-    password: '',
-    isSeller: false,
+    fullName: '', contactNumber: '', email: '', password: '', isSeller: false,
   });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -54,106 +53,82 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F1EB] flex flex-col text-[#1a1a1a]">
+    <div className="h-screen overflow-hidden bg-[#F5F1EB] flex flex-col text-[#1a1a1a]">
 
       {/* Navbar */}
-      <nav className="flex items-center justify-between px-8 sm:px-12 py-5 border-b border-black/10">
-        <span className="text-lg tracking-widest uppercase font-semibold">Snitch</span>
+      <nav className="flex items-center justify-between px-8 sm:px-12 py-4 border-b border-black/10 shrink-0">
+        <span style={{ fontFamily: "'Yeseva One', serif" }} className="text-[22px] tracking-wide text-[#1a1a1a]">SNITCH</span>
         <a
           href="/login"
-          className="text-[10px] tracking-[0.16em] uppercase text-[#8a8070] hover:text-[#1a1a1a] border-b border-transparent hover:border-[#1a1a1a] pb-px transition-all duration-200"
+          className="text-[13px] tracking-[0.16em] uppercase text-[#8a8070] hover:text-[#1a1a1a] border-b border-transparent hover:border-[#1a1a1a] pb-px transition-all duration-200"
         >
           Sign in
         </a>
       </nav>
 
-      {/* Body */}
-      <main className="flex-1 flex flex-col items-center px-6 pt-14 pb-20">
+      {/* Body — vertically centered, no scroll */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 overflow-hidden">
 
         {/* Heading */}
-        <p className="text-[9px] font-medium tracking-[0.28em] uppercase text-[#9a9080] mb-3">
-          New account
-        </p>
-        <h1 className="text-3xl sm:text-4xl font-semibold text-[#1a1a1a] text-center mb-2 tracking-tight">
-          Create your account
-        </h1>
-        <p className="text-sm font-light text-[#9a9080] mb-14">
-          Join thousands of members redefining modern style.
-        </p>
+        <div className="text-center mb-8">
+          <p className="text-[9px] font-medium tracking-[0.28em] uppercase text-[#9a9080] mb-2">
+            New account
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#1a1a1a] tracking-tight mb-1.5">
+            Create your account
+          </h1>
+          <p className="text-xs font-light text-[#9a9080]">
+            Join thousands of members redefining modern style.
+          </p>
+        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="w-full max-w-[460px] flex flex-col">
 
-          {/* Full Name + Contact */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-
-            <div className="flex flex-col mb-8">
-              <label className="text-[9px] font-medium tracking-[0.2em] uppercase text-[#9a9080] mb-2.5">
-                Full Name
-              </label>
+          {/* Name + Contact */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 mb-5">
+            <div>
+              <label className={labelCls}>Full Name</label>
               <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                placeholder="John Doe"
-                required
-                className="bg-transparent border-0 border-b border-black/20 text-sm font-light text-[#1a1a1a] py-2.5 outline-none placeholder:text-[#c5bdb0] focus:border-[#1a1a1a] transition-colors duration-200 rounded-none w-full"
+                type="text" name="fullName" value={formData.fullName}
+                onChange={handleChange} placeholder="John Doe" required
+                className={inputCls}
               />
             </div>
-
-            <div className="flex flex-col mb-8">
-              <label className="text-[9px] font-medium tracking-[0.2em] uppercase text-[#9a9080] mb-2.5">
-                Contact
-              </label>
+            <div>
+              <label className={labelCls}>Contact</label>
               <input
-                type="tel"
-                name="contactNumber"
-                value={formData.contactNumber}
-                onChange={handleChange}
-                placeholder="+91 98765 43210"
-                required
-                className="bg-transparent border-0 border-b border-black/20 text-sm font-light text-[#1a1a1a] py-2.5 outline-none placeholder:text-[#c5bdb0] focus:border-[#1a1a1a] transition-colors duration-200 rounded-none w-full"
+                type="tel" name="contactNumber" value={formData.contactNumber}
+                onChange={handleChange} placeholder="+91 98765 43210" required
+                className={inputCls}
               />
             </div>
           </div>
 
           {/* Email */}
-          <div className="flex flex-col mb-8">
-            <label className="text-[9px] font-medium tracking-[0.2em] uppercase text-[#9a9080] mb-2.5">
-              Email Address
-            </label>
+          <div className="mb-5">
+            <label className={labelCls}>Email Address</label>
             <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="hello@example.com"
-              required
-              className="bg-transparent border-0 border-b border-black/20 text-sm font-light text-[#1a1a1a] py-2.5 outline-none placeholder:text-[#c5bdb0] focus:border-[#1a1a1a] transition-colors duration-200 rounded-none w-full"
+              type="email" name="email" value={formData.email}
+              onChange={handleChange} placeholder="hello@example.com" required
+              className={inputCls}
             />
           </div>
 
           {/* Password */}
-          <div className="flex flex-col mb-8">
-            <label className="text-[9px] font-medium tracking-[0.2em] uppercase text-[#9a9080] mb-2.5">
-              Password
-            </label>
+          <div className="mb-5">
+            <label className={labelCls}>Password</label>
             <div className="relative">
               <input
-                type={showPw ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Min. 8 characters"
-                required
-                className="bg-transparent border-0 border-b border-black/20 text-sm font-light text-[#1a1a1a] py-2.5 pr-7 outline-none placeholder:text-[#c5bdb0] focus:border-[#1a1a1a] transition-colors duration-200 rounded-none w-full"
+                type={showPw ? 'text' : 'password'} name="password"
+                value={formData.password} onChange={handleChange}
+                placeholder="Min. 8 characters" required
+                className={`${inputCls} pr-7`}
               />
               <button
-                type="button"
-                tabIndex={-1}
+                type="button" tabIndex={-1}
                 onClick={() => setShowPw(p => !p)}
-                className="absolute right-0 bottom-2.5 text-[#b0a898] hover:text-[#1a1a1a] transition-colors duration-200"
+                className="absolute right-0 bottom-2 text-[#b0a898] hover:text-[#1a1a1a] transition-colors duration-200"
               >
                 {showPw ? <EyeOff /> : <EyeOn />}
               </button>
@@ -162,65 +137,64 @@ const Register = () => {
 
           {/* Seller toggle */}
           <div
-            role="button"
-            tabIndex={0}
+            role="button" tabIndex={0}
             onClick={() => setFormData(p => ({ ...p, isSeller: !p.isSeller }))}
             onKeyDown={e => e.key === 'Enter' && setFormData(p => ({ ...p, isSeller: !p.isSeller }))}
-            className="flex items-center justify-between py-4 border-t border-b border-black/10 mb-10 cursor-pointer select-none"
+            className="flex items-center justify-between py-3 border-t border-b border-black/10 mb-5 cursor-pointer select-none"
           >
             <div>
-              <p className="text-xs font-normal tracking-wide text-[#1a1a1a] mb-0.5">
+              <p className="text-[11px] font-normal tracking-wide text-[#1a1a1a] mb-0.5">
                 Register as a Seller
               </p>
               <p className="text-[10px] font-light text-[#9a9080]">
                 List and sell your products on Snitch
               </p>
             </div>
-
             <div className={`relative w-9 h-[22px] rounded-full flex-shrink-0 transition-colors duration-300 ${formData.isSeller ? 'bg-[#1a1a1a]' : 'bg-[#ddd8cf]'}`}>
               <div className={`absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${formData.isSeller ? 'translate-x-4' : 'translate-x-0'}`} />
             </div>
           </div>
 
+          <a href="/api/auth/google"
+            className="flex items-center justify-center gap-3 w-full py-3 mb-5 border bg-white border-black/15 hover:border-black/40 hover:bg-black/[0.02] transition-all duration-200 cursor-pointer"
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.85l6.09-6.09C34.46 3.19 29.5 1 24 1 14.82 1 7.07 6.49 3.64 14.24l7.08 5.5C12.4 13.72 17.74 9.5 24 9.5z" />
+              <path fill="#4285F4" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.75H24v9h12.7c-.55 2.96-2.2 5.47-4.68 7.16l7.18 5.57C43.36 37.26 46.52 31.3 46.52 24.5z" />
+              <path fill="#FBBC05" d="M10.72 28.26A14.7 14.7 0 0 1 9.5 24c0-1.48.25-2.91.7-4.26l-7.08-5.5A23.93 23.93 0 0 0 0 24c0 3.87.92 7.53 2.56 10.76l8.16-6.5z" />
+              <path fill="#34A853" d="M24 47c6.48 0 11.93-2.14 15.9-5.82l-7.18-5.57C30.6 37.45 27.45 38.5 24 38.5c-6.26 0-11.6-4.22-13.28-9.94l-8.16 6.5C6.07 42.51 14.44 47 24 47z" />
+            </svg>
+            <span className="text-[11px] font-medium tracking-[0.14em] uppercase text-[#1a1a1a]">
+              Continue with Google
+            </span>
+          </a>
+
           {/* Divider */}
-          <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center gap-4 mb-5">
             <div className="flex-1 h-px bg-black/10" />
-            <span className="text-[8px] font-normal tracking-[0.18em] uppercase text-[#c5bdb0] whitespace-nowrap">
+            <span className="text-[8px] tracking-[0.18em] uppercase text-[#c5bdb0] whitespace-nowrap">
               secure &amp; encrypted
             </span>
             <div className="flex-1 h-px bg-black/10" />
           </div>
 
-          {/* Submit */}
+          {/* CTA */}
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-[#1a1a1a] text-[#F5F1EB] text-[10px] font-medium tracking-[0.26em] uppercase hover:bg-[#2e2e2e] hover:-translate-y-px active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0 rounded-none"
+            type="submit" disabled={loading}
+            className="w-full py-3.5 bg-[#1a1a1a] text-[#F5F1EB] text-[10px] font-medium tracking-[0.26em] uppercase hover:bg-[#2e2e2e] hover:-translate-y-px active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0 rounded-none"
           >
             {loading ? 'Creating account...' : 'Create account'}
           </button>
 
           {/* Sign in */}
-          <p className="text-center text-[11px] font-light text-[#9a9080] tracking-wide mt-5">
+          <p className="text-center text-[11px] font-light text-[#9a9080] mt-4">
             Already a member?{' '}
-            <a
-              href="/login"
-              className="text-[#1a1a1a] border-b border-black/20 pb-px hover:border-[#1a1a1a] transition-colors duration-200"
-            >
+            <a href="/login" className="text-[#1a1a1a] border-b border-black/20 pb-px hover:border-[#1a1a1a] transition-colors duration-200">
               Sign in
             </a>
           </p>
 
         </form>
-
-        {/* Legal */}
-        <p className="mt-12 text-[10px] font-light text-[#b0a898] text-center leading-loose max-w-xs">
-          By creating an account you agree to our{' '}
-          <a href="/terms" className="text-[#6a6458] border-b border-[#6a6458]/30 pb-px">Terms of Service</a>
-          {' '}and{' '}
-          <a href="/privacy" className="text-[#6a6458] border-b border-[#6a6458]/30 pb-px">Privacy Policy</a>.
-        </p>
-
       </main>
     </div>
   );

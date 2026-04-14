@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from "../hook/useAuth";
 import { useNavigate } from "react-router";
 
+
 const EyeOn = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -44,21 +45,21 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F1EB] flex flex-col text-[#1a1a1a]">
+    <div className="h-screen overflow-hidden bg-[#F5F1EB] flex flex-col text-[#1a1a1a]">
 
       {/* Navbar */}
       <nav className="flex items-center justify-between px-8 sm:px-12 py-5 border-b border-black/10">
-        <span className="text-lg tracking-widest uppercase font-semibold">Snitch</span>
+        <span style={{ fontFamily: "'Yeseva One', serif" }} className="text-[22px] tracking-wide text-[#1a1a1a]">SNITCH</span>
         <a
           href="/register"
-          className="text-[10px] tracking-[0.16em] uppercase text-[#8a8070] hover:text-[#1a1a1a] border-b border-transparent hover:border-[#1a1a1a] pb-px transition-all duration-200"
+          className="text-[13px] tracking-[0.16em] uppercase text-[#8a8070] hover:text-[#1a1a1a] border-b border-transparent hover:border-[#1a1a1a] pb-px transition-all duration-200"
         >
           Create account
         </a>
       </nav>
 
       {/* Body */}
-      <main className="flex-1 flex flex-col items-center px-6 pt-14 pb-20">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 overflow-hidden">
 
         {/* Heading */}
         <p className="text-[9px] font-medium tracking-[0.28em] uppercase text-[#9a9080] mb-3">
