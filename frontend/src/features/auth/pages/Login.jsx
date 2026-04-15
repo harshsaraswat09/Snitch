@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from "../hook/useAuth";
 import { useNavigate } from "react-router";
+import ContinueWithGoogle from '../components/ContinueWithGoogle';
 
 
 const EyeOn = () => (
@@ -120,6 +121,7 @@ const Login = () => {
             </div>
           </div>
 
+
           {/* Divider */}
           <div className="flex items-center gap-4 mb-8">
             <div className="flex-1 h-px bg-black/10" />
@@ -133,13 +135,15 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-[#1a1a1a] text-[#F5F1EB] text-[10px] font-medium tracking-[0.26em] uppercase hover:bg-[#2e2e2e] hover:-translate-y-px active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0 rounded-none"
+            className="w-full mb-4 py-4 bg-[#1a1a1a] text-[#F5F1EB] text-[10px] font-medium tracking-[0.26em] uppercase hover:bg-[#2e2e2e] hover:-translate-y-px active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0 rounded-none"
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
+          <ContinueWithGoogle/>
+
 
           {/* Register link */}
-          <p className="text-center text-[11px] font-light text-[#9a9080] tracking-wide mt-5">
+          <p className="text-center text-[11px] font-light text-[#9a9080] tracking-wide mt-1">
             Don't have an account?{' '}
             <a
               href="/register"
