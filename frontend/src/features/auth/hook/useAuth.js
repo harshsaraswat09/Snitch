@@ -8,16 +8,18 @@ export const useAuth = () => {
     const dispatch = useDispatch()
 
 
-    async function handleRegister(data) { 
-        const res = await register(data)
+    async function handleRegister(data) {
 
+        const res = await register(data)
         dispatch(setUser(res.user))
+        return res.user
     }
 
     async function handleLogin(data) {
-        const res = await login(data)
 
+        const res = await login(data)
         dispatch(setUser(res.user))
+        return res.user
     }
 
     async function handleGetMe() {
