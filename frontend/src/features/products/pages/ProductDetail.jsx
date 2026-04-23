@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, Link, useNavigate  } from 'react-router';
+import { useParams, Link, useNavigate } from 'react-router';
 import { useProduct } from '../hooks/useProduct';
+import { useCart } from '../../cart/hook/useCart';
 
 const ProductDetail = () => {
     const { productId } = useParams();
-    const [ product, setProduct ] = useState(null);
-    const [ selectedImage, setSelectedImage ] = useState(0);
-    const [ selectedAttributes, setSelectedAttributes ] = useState({});
+    const [product, setProduct] = useState(null);
+    const [selectedImage, setSelectedImage] = useState(0);
+    const [selectedAttributes, setSelectedAttributes] = useState({});
     const navigate = useNavigate();
     const { handleGetProductById } = useProduct();
+    const { handleAddItem } = useCart()
 
     async function fetchProductDetails() {
         try {
@@ -22,26 +24,28 @@ const ProductDetail = () => {
 
     useEffect(() => {
         fetchProductDetails();
-    }, [ productId ]);
+    }, [productId]);
 
     useEffect(() => {
         if (product?.variants?.length > 0) {
             setSelectedAttributes(product.variants[0].attributes || {});
         }
-    }, [ product ]);
+    }, [product]);
 
     const activeVariant = useMemo(() => {
         if (!product?.variants || product.variants.length === 0) return null;
-        return product.variants.find(v => {
+
+        const match = product.variants.find(v => {
             if (!v.attributes) return false;
-            const vKeys = Object.keys(v.attributes);
-            const sKeys = Object.keys(selectedAttributes);
-            const isMatch = vKeys.every(k => v.attributes[k] === selectedAttributes[k]);
-            // If they don't have exactly the same keys, they shouldn't perfectly match, 
-            // but we might only care about matching what's available.
-            return vKeys.length === sKeys.length && isMatch;
+
+            return Object.entries(v.attributes).every(
+                ([key, value]) => selectedAttributes[key] === value
+            );
         });
+
+        return match || product.variants[0]; // 👈 fallback
     }, [product, selectedAttributes]);
+
 
     const availableAttributes = useMemo(() => {
         if (!product?.variants) return {};
@@ -66,12 +70,12 @@ const ProductDetail = () => {
 
     const handleAttributeChange = (attrName, value) => {
         const newAttrs = { ...selectedAttributes, [attrName]: value };
-        
+
         // Find if an exact match exists for this combination
         const exactMatch = product.variants.find(v => {
             const vAttrs = v.attributes || {};
             return Object.keys(newAttrs).every(k => newAttrs[k] === vAttrs[k]) &&
-                   Object.keys(vAttrs).every(k => newAttrs[k] === vAttrs[k]);
+                Object.keys(vAttrs).every(k => newAttrs[k] === vAttrs[k]);
         });
 
         if (exactMatch) {
@@ -98,14 +102,14 @@ const ProductDetail = () => {
     }
 
     console.log(product)
-    
-    // Fallbacks
-    const displayImages = (activeVariant?.images && activeVariant.images.length > 0) 
-        ? activeVariant.images 
-        : (product.images && product.images.length > 0 ? product.images : [ { url: '/snitch_editorial_warm.png' } ]);
 
-    const displayPrice = activeVariant?.price?.amount 
-        ? activeVariant.price 
+    // Fallbacks
+    const displayImages = (activeVariant?.images && activeVariant.images.length > 0)
+        ? activeVariant.images
+        : (product.images && product.images.length > 0 ? product.images : [{ url: '/snitch_editorial_warm.png' }]);
+
+    const displayPrice = activeVariant?.price?.amount
+        ? activeVariant.price
         : product.price;
 
     return (
@@ -164,7 +168,7 @@ const ProductDetail = () => {
                             {/* Main Image */}
                             <div className="relative w-full aspect-4/5 overflow-hidden group" style={{ backgroundColor: '#f5f3f0' }}>
                                 <img
-                                    src={displayImages[ selectedImage ]?.url || displayImages[ 0 ].url}
+                                    src={displayImages[selectedImage]?.url || displayImages[0].url}
                                     alt={product.title}
                                     className="w-full h-full object-cover transition-opacity duration-500"
 
@@ -216,7 +220,7 @@ const ProductDetail = () => {
                             </div>
 
                             <div className="h-px w-full mb-8" style={{ backgroundColor: '#e4e2df' }} />
-                               {/* Options/Variants */}
+                            {/* Options/Variants */}
                             {Object.entries(availableAttributes).map(([attrName, values]) => (
                                 <div key={attrName} className="mb-6">
                                     <h3 className="text-[10px] uppercase tracking-[0.24em] font-medium mb-3" style={{ color: '#C9A96E' }}>
@@ -273,6 +277,12 @@ const ProductDetail = () => {
                                     onMouseLeave={e => {
                                         e.currentTarget.style.backgroundColor = '#1b1c1a';
                                         e.currentTarget.style.color = '#fbf9f6';
+                                    }}
+                                    onClick={() => {
+                                        handleAddItem({
+                                            productId: product._id,
+                                            variantId: activeVariant._id
+                                        })
                                     }}
                                 >
                                     Add to Cart
