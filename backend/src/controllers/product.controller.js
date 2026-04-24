@@ -112,7 +112,12 @@ export async function addProductVariant(req, res) {
 
   const price = req.body.priceAmount;
   const stock = req.body.stock;
-  const attributes = JSON.parse(req.body.attributes || "{}");
+  const rawAttributes = JSON.parse(req.body.attributes || "{}");
+
+  const attributes = {};
+  Object.entries(rawAttributes).forEach(([key, value]) => {
+    attributes[key.trim().toLowerCase()] = value.trim();
+  });
 
   console.log(price);
 
@@ -134,3 +139,4 @@ export async function addProductVariant(req, res) {
     product,
   });
 }
+

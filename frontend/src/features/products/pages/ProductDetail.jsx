@@ -26,11 +26,7 @@ const ProductDetail = () => {
         fetchProductDetails();
     }, [productId]);
 
-    useEffect(() => {
-        if (product?.variants?.length > 0) {
-            setSelectedAttributes(product.variants[0].attributes || {});
-        }
-    }, [product]);
+    
 
     const activeVariant = useMemo(() => {
         if (!product?.variants || product.variants.length === 0) return null;
@@ -43,7 +39,7 @@ const ProductDetail = () => {
             );
         });
 
-        return match || product.variants[0]; // 👈 fallback
+        return match || null // 👈 fallback
     }, [product, selectedAttributes]);
 
 
@@ -69,27 +65,37 @@ const ProductDetail = () => {
     }, [activeVariant]);
 
     const handleAttributeChange = (attrName, value) => {
-        const newAttrs = { ...selectedAttributes, [attrName]: value };
+    const newAttrs = { ...selectedAttributes, [attrName]: value };
 
-        // Find if an exact match exists for this combination
-        const exactMatch = product.variants.find(v => {
-            const vAttrs = v.attributes || {};
-            return Object.keys(newAttrs).every(k => newAttrs[k] === vAttrs[k]) &&
-                Object.keys(vAttrs).every(k => newAttrs[k] === vAttrs[k]);
-        });
+    // ✅ Try exact match first
+    const exactMatch = product.variants.find(v => {
+        const vAttrs = v.attributes || {};
 
-        if (exactMatch) {
-            setSelectedAttributes(exactMatch.attributes);
-        } else {
-            // Find any variant that has this newly selected attribute to fallback nicely
-            const fallbackVariant = product.variants.find(v => v.attributes && v.attributes[attrName] === value);
-            if (fallbackVariant) {
-                setSelectedAttributes(fallbackVariant.attributes);
-            } else {
-                setSelectedAttributes(newAttrs);
-            }
-        }
-    };
+        return Object.keys(newAttrs).every(
+            key => newAttrs[key] === vAttrs[key]
+        ) &&
+        Object.keys(vAttrs).every(
+            key => newAttrs[key] === vAttrs[key]
+        );
+    });
+
+    if (exactMatch) {
+        setSelectedAttributes(exactMatch.attributes);
+        return;
+    }
+
+    // ✅ If exact match not found → fallback smartly
+    const fallback = product.variants.find(v => {
+        const vAttrs = v.attributes || {};
+        return vAttrs[attrName] === value;
+    });
+
+    if (fallback) {
+        setSelectedAttributes(fallback.attributes);
+    } else {
+        setSelectedAttributes(newAttrs);
+    }
+};
 
     if (!product) {
         return (
@@ -265,6 +271,10 @@ const ProductDetail = () => {
                                         e.currentTarget.style.color = '#fbf9f6';
                                     }}
                                     onClick={() => {
+                                        if(!activeVariant) {
+                                            alert("please select options first")
+                                            return
+                                        }
                                         handleAddItem({
                                             productId: product._id,
                                             variantId: activeVariant._id || null

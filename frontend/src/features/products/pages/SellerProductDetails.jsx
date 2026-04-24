@@ -107,7 +107,7 @@ const SellerProductDetails = () => {
     const newAttrsObj = {};
     updatedInputs.forEach(attr => {
       if (attr.key.trim() !== '') {
-        newAttrsObj[ attr.key.trim() ] = attr.value;
+        newAttrsObj[ attr.key.trim().toLowerCase() ] = attr.value.trim();
       }
     });
     setNewVariant(prev => ({ ...prev, attributes: newAttrsObj }));
@@ -121,7 +121,7 @@ const SellerProductDetails = () => {
     const newAttrsObj = {};
     updatedInputs.forEach(attr => {
       if (attr.key.trim() !== '') {
-        newAttrsObj[ attr.key.trim() ] = attr.value;
+        newAttrsObj[ attr.key.trim().toLowerCase() ] = attr.value.trim();
       }
     });
     setNewVariant(prev => ({ ...prev, attributes: newAttrsObj }));
