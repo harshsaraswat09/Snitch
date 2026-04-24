@@ -3,6 +3,7 @@ import { authenticateSeller } from "../middlewares/auth.middleware.js"
 import { createProduct, getAllProducts, getSellerProducts, getProductDetails, addProductVariant } from "../controllers/product.controller.js"
 import multer from "multer"
 import { createProductValidator } from "../validators/product.validator.js"
+import Product from "../models/product.model.js"
 
 const upload = multer({
     storage: multer.memoryStorage(),

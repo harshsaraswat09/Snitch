@@ -21,4 +21,3 @@ export const { setItems, addItem } = cartSlice.actions
 
 export default cartSlice.reducer
 
-//}
