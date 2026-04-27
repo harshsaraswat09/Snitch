@@ -27,7 +27,7 @@ const Cart = () => {
     const { handleGetCart, handleIncrementCartItem, handleCreateCartOrder} = useCart()
     const navigate = useNavigate()
     const { error, isLoading, Razorpay } = useRazorpay();
-    const user = useSelector(state => state.user)
+    const user = useSelector(state => state.auth.user)
 
 
     /* Local quantity state — key: cartItem._id, value: number */
