@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useCart } from '../hook/useCart'
 import { Link, useNavigate } from 'react-router'
+import { useRazorpay } from "react-razorpay";
+
 
 /* ─── Inline styles & tokens matching the "Avenue Montaigne" design system ─── */
 const tokens = {
@@ -22,8 +24,11 @@ const tokens = {
 
 const Cart = () => {
     const cart = useSelector(state => state.cart)
-    const { handleGetCart, handleIncrementCartItem } = useCart()
+    const { handleGetCart, handleIncrementCartItem, handleCreateCartOrder} = useCart()
     const navigate = useNavigate()
+    const { error, isLoading, Razorpay } = useRazorpay();
+    const user = useSelector(state => state.user)
+
 
     /* Local quantity state — key: cartItem._id, value: number */
     const [quantities, setQuantities] = useState({})
@@ -56,6 +61,39 @@ const Cart = () => {
 
     const formatCurrency = (amount, currency = 'INR') =>
         `${currency} ${Number(amount).toLocaleString('en-IN')}`
+
+    async function handleCheckout() {
+        const order = await handleCreateCartOrder()
+        console.log(order)
+
+
+        const options = {
+            key: "rzp_test_ShNSkpxt3emQVJ",
+            amount: order.amount, // Amount in paise
+            currency: order.currency,
+            name: "Snitch",
+            description: "Test Transaction",
+            order_id: order.id, // Generate order_id on server
+            handler: async (response) => {
+
+                console.log(response)
+                alert("Payment Successful")
+            },
+            prefill: {
+                name: user?.fullname,
+                email: user?.email,
+                contact: user?.contact,
+            },
+            theme: {
+                color: tokens.primary,
+            },
+        };
+
+        const razorpayInstance = new Razorpay(options);
+        razorpayInstance.open();
+    }
+
+
 
     /* ─── Empty state ─── */
     if (!cart?.items?.length) {
@@ -453,6 +491,7 @@ const Cart = () => {
                                         e.currentTarget.style.backgroundColor = tokens.onSurface
                                         e.currentTarget.style.color = tokens.surface
                                     }}
+                                    onClick={handleCheckout}
                                 >
                                     Proceed to Checkout
                                 </button>

@@ -26,3 +26,8 @@ export const incrementCartItemApi = async ({ productId, variantId }) => {
     const response = await cartApiInstance.patch(`/quantity/increment/${productId}/${variantId}`)
     return response.data
 }
+
+export const createCartOrder = async () => {
+    const response = await cartApiInstance.post("/payment/create/order")
+    return response.data
+}
