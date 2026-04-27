@@ -6,7 +6,7 @@ const Nav = () => {
     const navigate = useNavigate()
     const user = useSelector(state => state.auth.user)
 
-    const cartItems = useSelector(state => state.cart.items)
+    const cartItems = useSelector(state => state.cart?.items)
 
 
     return (
@@ -42,7 +42,7 @@ const Nav = () => {
                         <line x1="3" y1="6" x2="21" y2="6" />
                         <path d="M16 10a4 4 0 0 1-8 0" />
                     </svg>
-                    {cartItems.length > 0 && (
+                    {cartItems?.length > 0 && (
                         <span
                             className="absolute -top-2 -right-2 flex items-center justify-center rounded-full text-white"
                             style={{
