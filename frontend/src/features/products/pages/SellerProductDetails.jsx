@@ -1,411 +1,252 @@
-import React, { useEffect, useState } from 'react'
-import { useProduct } from '../hooks/useProduct';
-import { useParams } from 'react-router';
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router';
+import { useProducts } from '../hook/useProducts';
 
-// Helper icons
-const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+const StockBadge = ({ n }) => {
+  const cfg = n === 0 ? 'bg-red-50 text-red-600 border-red-200'
+    : n <= 5 ? 'bg-amber-50 text-amber-600 border-amber-200'
+    : 'bg-emerald-50 text-emerald-600 border-emerald-200';
+  const label = n === 0 ? 'Out of Stock' : n <= 5 ? 'Low' : 'In Stock';
+  return <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${cfg}`}>{label}</span>;
+};
 
 const SellerProductDetails = () => {
-  const [ product, setProduct ] = useState(null);
-  const [ localVariants, setLocalVariants ] = useState([]);
-  const [ isAddingVariant, setIsAddingVariant ] = useState(false);
-  const [ loading, setLoading ] = useState(true);
-
-  // UI state for inputs to maintain focus
-  const [ attributeInputs, setAttributeInputs ] = useState([ { key: '', value: '' } ]);
-
-  // New variant state
-  const [ newVariant, setNewVariant ] = useState({
-    images: [],
-    stock: 0,
-    attributes: {}, // Strictly an object
-    price: { amount: '', currency: 'INR' }
-  });
-
   const { productId } = useParams();
-  const { handleGetProductById, handleAddProductVariant } = useProduct();
+  const { handleProductById, handleAddProductVarient, handleUpdateProductCategory } = useProducts();
 
-  async function fetchProductDetails() {
-    setLoading(true);
-    try {
-      const data = await handleGetProductById(productId);
-      const prod = data?.product || data;
-      setProduct(prod);
-      // Initialize variants locally
-      if (prod?.variants) {
-        setLocalVariants(prod.variants);
-      }
-    } catch (error) {
-      console.error("Failed to fetch product details", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [imgIdx, setImgIdx] = useState(0);
+
+  // Variant form
+  const [size, setSize] = useState('');
+  const [stock, setStock] = useState('');
+  const [category, setCategory] = useState('');
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    fetchProductDetails();
-  }, [ productId ]);
+    fetchProduct();
+  }, [productId]);
 
-  // Handlers for modifying existing variant stock natively
-  const handleStockChange = (index, newStock) => {
-    const updatedVariants = [ ...localVariants ];
-    updatedVariants[ index ] = { ...updatedVariants[ index ], stock: Number(newStock) };
-    setLocalVariants(updatedVariants);
-  };
-
-  // Handlers for New Variant Form
-  const handleAddNewVariant = async () => {
-    // Validate required at least one attribute to be filled
-    const hasValidAttribute = attributeInputs.some(attr => attr.key.trim() && attr.value.trim());
-    if (!hasValidAttribute) {
-      alert("At least one valid attribute is required.");
-      return;
-    }
-
-    // Maps preview URL so the variant list can display the image locally
-    const cleanImages = newVariant.images.map(img => ({ url: img.previewUrl, file: img.file }));
-
-    // Attributes is already an object in newVariant, just use it safely
-    const cleanAttributes = { ...newVariant.attributes };
-
-    const variantToSave = {
-      images: cleanImages,
-      stock: Number(newVariant.stock),
-      attributes: cleanAttributes,
-      price: newVariant.price.amount
-        ? Number(newVariant.price.amount)
-        : undefined // price is optional
-    };
-
-    setLocalVariants([ ...localVariants, variantToSave ]);
-    setIsAddingVariant(false);
-
-    await handleAddProductVariant(productId, variantToSave)
-
-    // Reset form
-    // Note: should ideally revoke old object URLs as well to prevent memory leaks if it were a long-lived SPA
-    setAttributeInputs([ { key: '', value: '' } ]);
-    setNewVariant({
-      images: [],
-      stock: 0,
-      attributes: {},
-      price: { amount: '', currency: 'INR' }
+  const fetchProduct = () => {
+    handleProductById(productId).then(p => {
+      setProduct(p);
+      setLoading(false);
     });
   };
 
-  const handleAddAttribute = () => {
-    setAttributeInputs(prev => [ ...prev, { key: '', value: '' } ]);
-  };
-
-  const handleAttributeChange = (index, field, value) => {
-    const updatedInputs = [ ...attributeInputs ];
-    updatedInputs[ index ][ field ] = value;
-    setAttributeInputs(updatedInputs);
-
-    // Synchronize to object format
-    const newAttrsObj = {};
-    updatedInputs.forEach(attr => {
-      if (attr.key.trim() !== '') {
-        newAttrsObj[ attr.key.trim().toLowerCase() ] = attr.value.trim();
-      }
-    });
-    setNewVariant(prev => ({ ...prev, attributes: newAttrsObj }));
-  };
-
-  const handleRemoveAttribute = (index) => {
-    const updatedInputs = attributeInputs.filter((_, i) => i !== index);
-    setAttributeInputs(updatedInputs);
-
-    // Synchronize to object format
-    const newAttrsObj = {};
-    updatedInputs.forEach(attr => {
-      if (attr.key.trim() !== '') {
-        newAttrsObj[ attr.key.trim().toLowerCase() ] = attr.value.trim();
-      }
-    });
-    setNewVariant(prev => ({ ...prev, attributes: newAttrsObj }));
-  };
-
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-
-    const availableSlots = 7 - newVariant.images.length;
-    const filesToAdd = files.slice(0, availableSlots);
-
-    if (files.length > availableSlots) {
-      alert(`You can only upload up to 7 images. ${filesToAdd.length} added.`);
+  const handleAddVariant = async (e) => {
+    e.preventDefault();
+    if (!size || stock === '') return;
+    
+    setAdding(true);
+    try {
+      // Pass the structure expected by the API endpoint
+      await handleAddProductVarient(productId, {
+        size,
+        stock: Number(stock),
+        images: [] // Empty array as the API expects an array to loop over
+      });
+      // Refresh the product to get the new variant from the backend
+      await fetchProduct();
+      setSize('');
+      setStock('');
+      setCategory('');
+    } catch (error) {
+      console.error("Failed to add variant", error);
+    } finally {
+      setAdding(false);
     }
-
-    const newImageObjects = filesToAdd.map(file => ({
-      file,
-      previewUrl: URL.createObjectURL(file)
-    }));
-
-    setNewVariant(prev => ({
-      ...prev,
-      images: [ ...prev.images, ...newImageObjects ]
-    }));
-
-    // Clear the input so identical files can be selected again if needed
-    e.target.value = '';
   };
 
-  const handleRemoveImage = (index) => {
-    const imageToRemove = newVariant.images[ index ];
-    if (imageToRemove?.previewUrl) {
-      URL.revokeObjectURL(imageToRemove.previewUrl);
+  const [savingCategory, setSavingCategory] = useState(false);
+  const handleSaveCategory = async (e) => {
+    e.preventDefault();
+    if (!category) return;
+    setSavingCategory(true);
+    try {
+      await handleUpdateProductCategory(productId, category);
+      await fetchProduct(); // re-fetch to get updated product from DB
+      setCategory('');
+    } catch (err) {
+      alert('Failed to save category. Please try again.',err);
+    } finally {
+      setSavingCategory(false);
     }
-    const updatedImages = newVariant.images.filter((_, i) => i !== index);
-    setNewVariant(prev => ({ ...prev, images: updatedImages }));
   };
 
-  if (loading) {
-    return <div className="min-h-screen bg-[#fbf9f6] flex items-center justify-center text-[#1b1c1a] font-serif">Loading gallery...</div>;
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="w-7 h-7 border-2 border-black border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
-  if (!product) {
-    return <div className="min-h-screen bg-[#fbf9f6] flex items-center justify-center text-[#1b1c1a] font-serif">Product Not Found</div>;
-  }
+  const variants = product?.variants || [];
+  const totalStock = variants.reduce((s, v) => s + v.stock, 0);
 
   return (
-     <div className="min-h-screen bg-[#fbf9f6] text-[#1b1c1a] font-sans pb-24">
-      {/* Top Banner / Header */}
-      <header className="sticky top-0 z-10 bg-[#fbf9f6]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
-        <h1 className="font-serif text-xl tracking-wide uppercase">{product.title?.substring(0, 20)}{product.title?.length > 20 ? '...' : ''}</h1>
+    <div className="min-h-screen bg-[#f8f8f8] font-sans">
+
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 px-6 md:px-10 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-3 text-sm">
+          <Link to="/seller/dashboard" className="text-gray-400 hover:text-black transition-colors">← Dashboard</Link>
+          <span className="text-gray-300">/</span>
+          <span className="font-bold text-gray-900 capitalize truncate max-w-45">{product?.title}</span>
+        </div>
+        <Link to="/seller/create" className="text-xs font-bold uppercase tracking-widest px-4 py-2 bg-black text-white hover:bg-gray-900 transition-colors">
+          + New Product
+        </Link>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 md:px-8 mt-8">
+      <main className="max-w-5xl mx-auto px-4 md:px-8 py-10 space-y-8">
 
-        {/* Base Product Info */}
-        <section className="flex flex-col md:flex-row gap-8 mb-16">
-          <div className="w-full md:w-1/2">
-            {/* Gallery placeholder */}
-            <div className="w-full aspect-[4/5] bg-[#f5f3f0] overflow-hidden">
-              {product.images && product.images.length > 0 ? (
-                <img src={product.images[ 0 ].url} alt={product.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[#7f7668]">No Image</div>
-              )}
+        {/* ── Product Overview ── */}
+        <div className="bg-white border border-gray-200 p-6 flex flex-col md:flex-row gap-7">
+          <div className="shrink-0 flex flex-col gap-2">
+            <div className="w-48 aspect-4/5 bg-gray-100 overflow-hidden">
+              {product?.images?.[imgIdx]
+                ? <img src={product.images[imgIdx].url} alt={product?.title} className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs uppercase tracking-widest">No Image</div>
+              }
             </div>
-            {/* Thumbnails */}
-            {product.images && product.images.length > 1 && (
-              <div className="flex gap-2 mt-2 overflow-x-auto">
-                {product.images.slice(1).map((img, i) => (
-                  <img key={i} src={img.url} alt={`Thumb ${i}`} className="w-16 h-20 object-cover bg-[#f5f3f0] shrink-0" />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="w-full md:w-1/2 flex flex-col justify-center">
-            <h2 className="font-serif text-4xl md:text-5xl leading-tight mb-4 uppercase">{product.title}</h2>
-            <p className="text-[#6e6258] text-lg mb-6 leading-relaxed max-w-md">{product.description}</p>
-            <div className="text-2xl tracking-wide font-light mb-8">
-              {product.price?.amount} {product.price?.currency}
-            </div>
-          </div>
-        </section>
-
-        {/* Variants & Inventory */}
-        <section className="bg-[#f5f3f0] p-6 md:p-12">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-            <h3 className="font-serif text-3xl uppercase">Variants & Inventory</h3>
-            {!isAddingVariant && (
-              <button
-                onClick={() => setIsAddingVariant(true)}
-                className="bg-[#745a27] text-[#ffffff] px-6 py-3 uppercase tracking-wider text-sm hover:bg-[#5a4312] transition-colors flex items-center gap-2 cursor-pointer"
-              >
-                <PlusIcon /> Add New Variant
-              </button>
-            )}
-          </div>
-
-          {/* Add New Variant Form */}
-          {isAddingVariant && (
-            <div className="bg-[#ffffff] p-6 md:p-8 mb-12 shadow-[0_20px_40px_rgba(27,28,26,0.04)]">
-              <div className="flex justify-between items-center mb-6">
-                <h4 className="font-serif text-xl uppercase">Create Variant</h4>
-                <button
-                  onClick={() => setIsAddingVariant(false)}
-                  className="text-[#7f7668] hover:text-[#1b1c1a] text-sm uppercase tracking-wider cursor-pointer"
-                >
-                  Cancel
+            <div className="flex gap-1.5 flex-wrap">
+              {product?.images?.map((img, i) => (
+                <button key={img._id} onClick={() => setImgIdx(i)}
+                  className={`w-11 h-14 border-2 overflow-hidden transition-all ${imgIdx === i ? 'border-black' : 'border-transparent opacity-50 hover:opacity-80'}`}>
+                  <img src={img.url} alt="" className="w-full h-full object-cover" />
                 </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Form Left Col: Attributes & Basics */}
-                <div className="space-y-6">
-
-                  {/* Dynamic Attributes */}
-                  <div>
-                    <label className="block text-sm uppercase tracking-wider text-[#6e6258] mb-3">Attributes (e.g. Size, Color) *</label>
-                    <div className="space-y-3">
-                      {attributeInputs.map((attr, index) => (
-                        <div key={index} className="flex gap-2 items-center">
-                          <input
-                            type="text"
-                            placeholder="Key (e.g., Size)"
-                            value={attr.key}
-                            onChange={(e) => handleAttributeChange(index, 'key', e.target.value)}
-                            className="w-1/2 bg-transparent border-b border-[#d0c5b5] py-2 focus:outline-none focus:border-[#745a27] placeholder:text-[#d0c5b5]"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Value (e.g., M)"
-                            value={attr.value}
-                            onChange={(e) => handleAttributeChange(index, 'value', e.target.value)}
-                            className="w-1/2 bg-transparent border-b border-[#d0c5b5] py-2 focus:outline-none focus:border-[#745a27] placeholder:text-[#d0c5b5]"
-                          />
-                          {attributeInputs.length > 1 && (
-                            <button onClick={() => handleRemoveAttribute(index)} className="text-[#ba1a1a] p-2 hover:bg-[#ffdad6] transition-colors cursor-pointer">
-                              <TrashIcon />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={handleAddAttribute}
-                      className="mt-3 text-[#745a27] text-sm uppercase tracking-wider flex items-center gap-1 hover:text-[#5a4312] cursor-pointer"
-                    >
-                      <PlusIcon /> Add Attribute
-                    </button>
-                  </div>
-
-                  {/* Stock & Price */}
-                  <div className="flex gap-4">
-                    <div className="w-1/2">
-                      <label className="block text-sm uppercase tracking-wider text-[#6e6258] mb-2">Initial Stock</label>
-                      <input
-                        type="number"
-                        value={newVariant.stock}
-                        onChange={(e) => setNewVariant({ ...newVariant, stock: e.target.value })}
-                        className="w-full bg-transparent border-b border-[#d0c5b5] py-2 focus:outline-none focus:border-[#745a27]"
-                      />
-                    </div>
-                    <div className="w-1/2">
-                      <label className="block text-sm uppercase tracking-wider text-[#6e6258] mb-2">Price Amount (Optional)</label>
-                      <input
-                        type="number"
-                        value={newVariant.price.amount}
-                        onChange={(e) => setNewVariant({ ...newVariant, price: { ...newVariant.price, amount: e.target.value } })}
-                        placeholder="Default if empty"
-                        className="w-full bg-transparent border-b border-[#d0c5b5] py-2 focus:outline-none focus:border-[#745a27] placeholder:text-[#d0c5b5]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Form Right Col: Images */}
-                <div>
-                  <div className="flex justify-between items-end mb-3">
-                    <label className="block text-sm uppercase tracking-wider text-[#6e6258]">Image Upload (Max 7, Optional)</label>
-                    <span className="text-xs text-[#7f7668]">{newVariant.images.length}/7</span>
-                  </div>
-
-                  {newVariant.images.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                      {newVariant.images.map((img, index) => (
-                        <div key={index} className="relative aspect-[4/5] bg-[#f5f3f0]">
-                          <img src={img.previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                          <button
-                            onClick={() => handleRemoveImage(index)}
-                            className="absolute top-1 right-1 bg-white/80 p-1 text-[#ba1a1a] hover:bg-white transition-colors cursor-pointer"
-                          >
-                            <TrashIcon />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {newVariant.images.length < 7 && (
-                    <div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                        className="block w-full text-sm text-[#6e6258]
-                          file:mr-4 file:py-2 file:px-4
-                          file:border-0 file:bg-[#f5f3f0] file:text-[#1b1c1a]
-                          hover:file:bg-[#e4e2df] file:cursor-pointer file:uppercase file:text-xs file:tracking-wider file:font-serif
-                          cursor-pointer"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-10 flex justify-end">
-                <button
-                  onClick={handleAddNewVariant}
-                  className="bg-gradient-to-r from-[#745a27] to-[#c9a96e] text-[#ffffff] px-8 py-3 uppercase tracking-wider text-sm hover:opacity-90 transition-opacity cursor-pointer"
-                >
-                  Save Variant
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Variants List */}
-          {localVariants.length === 0 ? (
-            <div className="py-12 text-center text-[#6e6258]">
-              <p>No variants have been created yet.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {localVariants.map((variant, idx) => (
-                <div key={idx} className="bg-[#ffffff] flex flex-col pt-4 shadow-[0_20px_40px_rgba(27,28,26,0.02)]">
-                  <div className="px-6 flex gap-4 h-24 mb-4">
-                    {/* Variant Thumb */}
-                    <div className="w-16 h-20 bg-[#f5f3f0] shrink-0">
-                      {variant.images && variant.images.length > 0 ? (
-                        <img src={variant.images[ 0 ].url} alt="Variant" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-[#7f7668]">N/A</div>
-                      )}
-                    </div>
-                    {/* Attributes */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {Object.entries(variant.attributes || {}).map(([ key, val ]) => (
-                          <span key={key} className="bg-[#f5f3f0] px-2 py-1 text-xs uppercase tracking-wider text-[#4d463a]">
-                            <span className="text-[#a8a094]">{key}:</span> {val}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="text-sm font-light">
-                        {variant.price?.amount ? `${variant.price.amount} ${variant.price.currency}` : 'Base Price'}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stock Management Row */}
-                  <div className="mt-auto border-t border-[#f5f3f0] bg-[#fbf9f6] flex items-center px-6 py-3 justify-between">
-                    <label className="text-sm text-[#6e6258] uppercase tracking-wider">Current Stock</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={variant.stock || 0}
-                        onChange={(e) => handleStockChange(idx, e.target.value)}
-                        className="w-20 bg-transparent border-b border-[#d0c5b5] py-1 text-right focus:outline-none focus:border-[#745a27] font-serif text-lg"
-                      />
-                    </div>
-                  </div>
-                </div>
               ))}
             </div>
+          </div>
+
+          <div className="flex-1 flex flex-col gap-4 justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 mb-1">Product</p>
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-950 capitalize mb-2">{product?.title}</h1>
+              {product?.description && <p className="text-sm text-gray-500 leading-relaxed">{product.description}</p>}
+            </div>
+            <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100">
+              {[
+                { label: 'Price', value: `${product?.price?.Currency || 'INR'} ${Number(product?.price?.amount || 0).toLocaleString('en-IN')}` },
+                { label: 'Category', value: product?.category || 'Uncategorized' },
+                { label: 'Total Stock', value: `${totalStock} units` },
+                { label: 'Variants', value: variants.length },
+              ].map(s => (
+                <div key={s.label}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">{s.label}</p>
+                  <p className="text-lg font-extrabold text-gray-900">{s.value}</p>
+                </div>
+              ))}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Status</p>
+                <StockBadge n={totalStock} />
+              </div>
+            </div>
+            <Link to={`/product/${product?._id}`} target="_blank"
+              className="text-xs font-bold uppercase tracking-widest border border-gray-300 px-4 py-2 hover:border-black transition-colors inline-block w-fit">
+              View Public Page ↗
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Variants ── */}
+        <div className="bg-white border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-extrabold uppercase tracking-[0.18em]">Variants</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Available sizes and stock</p>
+            </div>
+            <span className="text-[11px] font-bold border border-gray-200 text-gray-500 px-2.5 py-1 uppercase tracking-wider">{variants.length} variants</span>
+          </div>
+
+          {variants.length === 0 ? (
+            <p className="text-center text-sm text-gray-400 py-14 uppercase tracking-widest">No variants yet — add one below</p>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                  <th className="py-3 px-5 text-left">Size</th>
+                  <th className="py-3 px-5 text-left">Stock</th>
+                  <th className="py-3 px-5 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {variants.map(v => (
+                  <tr key={v._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-5 text-sm font-extrabold uppercase tracking-widest">{v.size}</td>
+                    <td className="py-4 px-5">
+                      <span className="text-base font-bold tabular-nums">{v.stock}</span>
+                    </td>
+                    <td className="py-4 px-5"><StockBadge n={v.stock} /></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-gray-50 border-t border-gray-100">
+                  <td colSpan={2} className="py-3 px-5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Stock</td>
+                  <td className="py-3 px-5 text-sm font-extrabold">{totalStock} units</td>
+                </tr>
+              </tfoot>
+            </table>
           )}
 
-        </section>
+          {/* Add variant form */}
+          <form onSubmit={handleAddVariant} className="border-t border-dashed border-gray-200 p-6 bg-gray-50">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-4">Add the Sizes</p>
+            <div className="flex flex-wrap gap-3 items-end">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Size</label>
+                <select value={size} onChange={e => setSize(e.target.value)}
+                  className="border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-black appearance-none cursor-pointer min-w-32.5">
+                  <option value="">Select...</option>
+                  {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Stock</label>
+                <input type="number" min="0" value={stock} onChange={e => setStock(e.target.value)} placeholder="0"
+                  className="border border-gray-300 px-3 py-2.5 text-sm font-semibold outline-none focus:border-black w-28" />
+              </div>
+              <button type="submit" disabled={adding}
+                className="px-5 py-2.5 bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-gray-900 transition-colors disabled:opacity-50">
+                {adding ? 'Adding...' : '+ Add'}
+              </button>
+            </div>
+          </form>
+
+          {/* Add Category form */}
+          {!product?.category && (
+            <form onSubmit={handleSaveCategory} className="border-t border-dashed border-gray-200 p-6 bg-gray-50">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-4">Add the Category</p>
+              <div className="flex flex-wrap gap-3 items-end">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Category</label>
+                  <select value={category} onChange={e => setCategory(e.target.value)}
+                    className="border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-black appearance-none cursor-pointer min-w-32.5 capitalize">
+                    <option value="">Select...</option>
+                    <option value="tees">Tees</option>
+                    <option value="pants">Pants</option>
+                    <option value="hoodies">Hoodies</option>
+                    <option value="jerseys">Jerseys</option>
+                    <option value="polos">Polos</option>
+                    <option value="tanktops">Tank Tops</option>
+                  </select>
+                </div>
+                <button type="submit" disabled={!category || savingCategory}
+                  className="px-5 py-2.5 bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-gray-900 transition-colors disabled:opacity-50">
+                  {savingCategory ? 'Saving...' : '+ Save Category'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
 
       </main>
     </div>
-  )
-}
+  );
+};
 
 export default SellerProductDetails;
