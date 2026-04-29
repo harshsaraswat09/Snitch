@@ -107,8 +107,6 @@ const ProductDetail = () => {
         );
     }
 
-    console.log(product)
-
     // Fallbacks
     const displayImages = (activeVariant?.images && activeVariant.images.length > 0)
         ? activeVariant.images
@@ -120,11 +118,6 @@ const ProductDetail = () => {
 
     return (
         <>
-            {/* Google Fonts */}
-            <link
-                href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
-                rel="stylesheet"
-            />
 
             <div
                 className="min-h-screen selection:bg-[#C9A96E]/30 pb-24"
@@ -271,13 +264,14 @@ const ProductDetail = () => {
                                         e.currentTarget.style.color = '#fbf9f6';
                                     }}
                                     onClick={() => {
-                                        if(!activeVariant) {
-                                            alert("please select options first")
+                                        const hasVariants = product.variants && product.variants.length > 0
+                                        if(hasVariants && !activeVariant) {
+                                            alert("Please select your options first")
                                             return
                                         }
                                         handleAddItem({
                                             productId: product._id,
-                                            variantId: activeVariant._id || null
+                                            variantId: activeVariant?._id || null
                                         })
                                     }}
                                 >
@@ -297,6 +291,18 @@ const ProductDetail = () => {
                                     }}
                                     onMouseLeave={e => {
                                         e.currentTarget.style.borderColor = '#d0c5b5';
+                                    }}
+                                    onClick={() => {
+                                        const hasVariants = product.variants && product.variants.length > 0
+                                        if(hasVariants && !activeVariant) {
+                                            alert("Please select your options first")
+                                            return
+                                        }
+                                        handleAddItem({
+                                            productId: product._id,
+                                            variantId: activeVariant?._id || null
+                                        })
+                                        navigate('/cart')
                                     }}
                                 >
                                     Buy Now
