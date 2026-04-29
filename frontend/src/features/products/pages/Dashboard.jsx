@@ -1,148 +1,85 @@
 import React, { useEffect } from 'react';
-import { useProduct } from '../hooks/useProduct';
+import { useProducts } from '../hook/useProducts';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router';
+import { Link , useNavigate} from 'react-router';
 
 const Dashboard = () => {
-    const { handleGetSellerProduct } = useProduct();
+    const { handleGetSellerProduct } = useProducts();
     const sellerProducts = useSelector(state => state.product.sellerProducts);
-    const navigate = useNavigate();
 
     useEffect(() => {
         handleGetSellerProduct();
     }, []);
 
+    const navigate = useNavigate()
+
     return (
-        <>
-            {/* Google Fonts */}
-            <link
-                href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
-                rel="stylesheet"
-            />
-
-            <div
-                className="min-h-screen selection:bg-[#C9A96E]/30"
-                style={{ backgroundColor: '#fbf9f6', fontFamily: "'Inter', sans-serif" }}
-            >
-                <div className="max-w-7xl mx-auto px-8 lg:px-16 xl:px-24">
-
-                    {/* ── Top Bar ── */}
-                    <div className="pt-10 pb-0 flex items-center gap-5">
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="text-lg transition-colors duration-200 leading-none"
-                            style={{ color: '#B5ADA3' }}
-                            aria-label="Go back"
-                            onMouseEnter={e => e.currentTarget.style.color = '#C9A96E'}
-                            onMouseLeave={e => e.currentTarget.style.color = '#B5ADA3'}
-                        >
-                            ←
-                        </button>
-                        <span
-                            className="text-xs font-medium tracking-[0.32em] uppercase"
-                            style={{ fontFamily: "'Cormorant Garamond', serif", color: '#C9A96E' }}
-                        >
-                            Snitch.
+        <div className="min-h-screen bg-white text-black font-sans px-6 md:px-12 py-12">
+            <div className="max-w-7xl mx-auto">
+                
+                {/* Dashboard Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-gray-200 pb-6 mb-12">
+                    <div>
+                        <h1 className="text-3xl font-extrabold uppercase tracking-tight">Seller Catalog</h1>
+                        <p className="text-gray-500 mt-2 text-sm">Manage and view your active product listings.</p>
+                    </div>
+                    <div className="mt-4 md:mt-0 flex gap-6 items-center">
+                        <span className="text-xs font-bold tracking-[0.15em] text-gray-400 border border-gray-200 px-3 py-1 uppercase">
+                            {sellerProducts?.length || 0} ITEMS
                         </span>
+                        <Link to="/seller/create" className="text-xs font-bold tracking-[0.15em] uppercase text-white bg-black px-5 py-2 hover:bg-gray-900 transition-colors">
+                            + ADD NEW
+                        </Link>
                     </div>
-
-                    {/* ── Page Header ── */}
-                    <div className="pt-10 pb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 overflow-hidden">
-                        <div>
-                            <h1
-                                className="text-4xl lg:text-5xl font-light leading-tight"
-                                style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}
-                            >
-                                Your Vault
-                            </h1>
-                            {/* Gold rule separator */}
-                            <div className="mt-4 w-14 h-px" style={{ backgroundColor: '#C9A96E' }} />
-                        </div>
-
-                        <button
-                            onClick={() => navigate('/seller/create-product')}
-                            className="py-4 px-8 text-[11px] uppercase tracking-[0.3em] font-medium transition-all duration-300 w-full md:w-auto text-center"
-                            style={{
-                                backgroundColor: '#1b1c1a',
-                                color: '#fbf9f6',
-                                fontFamily: "'Inter', sans-serif"
-                            }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.backgroundColor = '#C9A96E';
-                                e.currentTarget.style.color = '#1b1c1a';
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.backgroundColor = '#1b1c1a';
-                                e.currentTarget.style.color = '#fbf9f6';
-                            }}
-                        >
-                            New Listing
-                        </button>
-                    </div>
-
-                    {/* ── Product Grid ── */}
-                    {sellerProducts && sellerProducts.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16 pb-24">
-                            {sellerProducts.map(product => {
-                                const imageUrl = product.images && product.images.length > 0
-                                    ? product.images[0].url
-                                    : '/snitch_editorial_warm.png'; // Fallback to our warm editorial
-
-                                return (
-                                    <div
-                                        onClick={() => { navigate(`/seller/product/${product._id}`) }}
-                                        key={product._id} className="group cursor-pointer flex flex-col">
-                                        {/* Image Container */}
-                                        <div className="aspect-[4/5] overflow-hidden mb-6" style={{ backgroundColor: '#f5f3f0' }}>
-                                            <img
-                                                src={imageUrl}
-                                                alt={product.title}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                            />
-                                        </div>
-
-                                        {/* Product Details */}
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-start justify-between gap-4">
-                                                <h3
-                                                    className="text-xl leading-snug transition-colors duration-300 group-hover:text-[#C9A96E]"
-                                                    style={{ fontFamily: "'Cormorant Garamond', serif", color: '#1b1c1a' }}
-                                                >
-                                                    {product.title}
-                                                </h3>
-                                            </div>
-
-                                            <p
-                                                className="text-[12px] line-clamp-2 leading-relaxed"
-                                                style={{ color: '#7A6E63' }}
-                                            >
-                                                {product.description}
-                                            </p>
-
-                                            <div className="mt-2">
-                                                <span
-                                                    className="text-[10px] uppercase tracking-[0.2em] font-medium"
-                                                    style={{ color: '#1b1c1a' }}
-                                                >
-                                                    {product.price?.currency} {product.price?.amount?.toLocaleString()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="py-24 text-center flex flex-col items-center">
-                            <span className="text-[10px] uppercase tracking-[0.2em] font-medium mb-4" style={{ color: '#C9A96E' }}>Empty Vault</span>
-                            <p className="max-w-md mx-auto text-lg leading-relaxed" style={{ fontFamily: "'Cormorant Garamond', serif", color: '#7A6E63' }}>
-                                You haven't added any curated pieces to your archive yet. Begin by creating a new listing.
-                            </p>
-                        </div>
-                    )}
                 </div>
+
+                {/* Product Grid */}
+                {(!sellerProducts || sellerProducts.length === 0) ? (
+                    <div className="text-center py-32 border border-dashed border-gray-200 bg-gray-50 flex flex-col items-center">
+                        <p className="text-gray-500 mb-4 tracking-wide">No products found in your catalog.</p>
+                        <Link to="/seller/create" className="text-xs font-bold tracking-widest text-black border-b border-black pb-1 uppercase hover:text-gray-600 transition-colors">
+                            Create your first product
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-12">
+                        {sellerProducts.map(product => (
+                            <div key={product._id} className="group cursor-pointer flex flex-col">
+                                {/* Image Container */}
+                                <div onClick={()=>{
+                        navigate(`/seller/product/${product._id}`)
+                    }}  className="aspect-4/5 bg-gray-100 overflow-hidden mb-4 relative">
+                                    {product.images?.[0]?.url ? (
+                                        <img 
+                                            src={product.images[0].url} 
+                                            alt={product.title} 
+                                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">
+                                            No Image
+                                        </div>
+                                    )}
+                                    {/* Hover overlay hint */}
+                                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                                
+                                {/* Info */}
+                                <div className="flex flex-col flex-1">
+                                    <h3 className="text-sm font-extrabold uppercase tracking-wide truncate mb-1">
+                                        {product.title}
+                                    </h3>
+                                    <p className="text-gray-500 font-medium text-sm mt-auto">
+                                        {product.price?.Currency} {product.price?.amount}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
             </div>
-        </>
+        </div>
     );
 };
 
