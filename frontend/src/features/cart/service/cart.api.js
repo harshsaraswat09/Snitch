@@ -1,33 +1,31 @@
 import axios from "axios"
 
-
-const cartApiInstance = axios.create({
-    baseURL: "/api/cart",
-    withCredentials: true
+const cartAPIInstance = axios.create({
+    baseURL:"/api/cart",
+    withCredentials:true
 })
 
-
-export const addItem = async ({ productId, variantId }) => {
-    const response = await cartApiInstance.post(`/add/${productId}/${variantId}`, {
-        quantity: 1
-    })
-
+export const addItems = async ({ productId, variantId, quantity }) => {
+    const response = await cartAPIInstance.post(`/add/${productId}/${variantId}`, { quantity })
     return response.data
 }
 
-export const getCart = async() => {
-    const response = await cartApiInstance.get("/")
-
+export const getCart = async () => {
+    const response = await cartAPIInstance.get('/')
     return response.data
-
 }
 
-export const incrementCartItemApi = async ({ productId, variantId }) => {
-    const response = await cartApiInstance.patch(`/quantity/increment/${productId}/${variantId}`)
+export const updateCartItemAPI = async ({ productId, variantId, quantity }) => {
+    const response = await cartAPIInstance.put(`/update/${productId}/${variantId}`, { quantity })
+    return response.data
+}
+
+export const removeCartItemAPI = async ({ productId, variantId }) => {
+    const response = await cartAPIInstance.delete(`/remove/${productId}/${variantId}`)
     return response.data
 }
 
 export const createCartOrder = async () => {
-    const response = await cartApiInstance.post("/payment/create/order")
+    const response = await cartAPIInstance.post(`/payment/create/order`)
     return response.data
 }

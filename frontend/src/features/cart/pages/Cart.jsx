@@ -1,536 +1,236 @@
-import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { useCart } from '../hook/useCart'
-import { Link, useNavigate } from 'react-router'
-import { useRazorpay } from "react-razorpay";
-
-
-/* ─── Inline styles & tokens matching the "Avenue Montaigne" design system ─── */
-const tokens = {
-    surface: '#fbf9f6',
-    surfaceLow: '#f5f3f0',
-    surfaceLowest: '#ffffff',
-    surfaceHigh: '#eae8e5',
-    surfaceHighest: '#e4e2df',
-    onSurface: '#1b1c1a',
-    onSurfaceVariant: '#4d463a',
-    secondary: '#7A6E63',
-    muted: '#B5ADA3',
-    primary: '#C9A96E',
-    primaryDark: '#745a27',
-    outlineVariant: '#d0c5b5',
-    outline: '#7f7668',
-}
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Link } from 'react-router';
+import Navbar from '../../products/components/Navbar';
+import Footer from '../../products/components/Footer';
+import { useCart } from '../hook/useCart';
+import {useRazorpay, RazorpayOrderOptions} from "react-razorpay"
 
 const Cart = () => {
-    const cart = useSelector(state => state.cart)
-    const { handleGetCart, handleIncrementCartItem, handleCreateCartOrder} = useCart()
-    const navigate = useNavigate()
-    const { error, isLoading, Razorpay } = useRazorpay();
-    const user = useSelector(state => state.auth.user)
+  const { handleGetCart, handleUpdateCartItem, handleRemoveCartItem, handleCreateCartOrder } = useCart();
+  const cartItems = useSelector(state => state.cart.items);
+  const {error , isLoading , Razorpay} = useRazorpay()
+  const user = useSelector(state => state.auth.user);
+  
+  // 1. Add state for the custom popup (Toast)
+  const [toastMessage, setToastMessage] = useState(null);
 
+  useEffect(() => {
+    handleGetCart();
+  }, []);
 
-    /* Local quantity state — key: cartItem._id, value: number */
-    const [quantities, setQuantities] = useState({})
+  const total = cartItems?.reduce((acc, item) => acc + (item.price?.amount * item.quantity), 0) || 0;
 
-    useEffect(() => {
-        handleGetCart()
-    }, [])
-
-    /* Sync local qty state when cartItems arrive */
-
-    const changeQty = (id, delta) => {
-        setQuantities(prev => ({
-            ...prev,
-            [id]: Math.max(1, (prev[id] ?? 1) + delta),
-        }))
-    }
-
-
-    /* ─── Helpers ─── */
-    const getVariantDetails = (product, variantId) => {
-        if (!product?.variants || !variantId) return null
-        return product.variants
-    }
-
-    const getDisplayImage = (product, variant) => {
-        if (variant?.images?.length) return variant.images[0].url
-        if (product?.images?.length) return product.images[0].url
-        return null
-    }
-
-    const formatCurrency = (amount, currency = 'INR') =>
-        `${currency} ${Number(amount).toLocaleString('en-IN')}`
-
-    async function handleCheckout() {
-        const order = await handleCreateCartOrder()
-        console.log(order)
-
+  async function handleCheckout() {
+    try {
+        // Fetch the order ID from your backend
+        const order = await handleCreateCartOrder();
+        
+        if (!order || !order.id) {
+            showToast("Failed to initiate order. Please try again.");
+            return;
+        }
 
         const options = {
-            key: "rzp_test_ShNSkpxt3emQVJ",
-            amount: order.amount, // Amount in paise
+            key: "rzp_test_ShlNoOcuA5fmdb", // Consider moving this to your .env file later!
+            amount: order.amount, 
             currency: order.currency,
-            name: "Snitch",
-            description: "Test Transaction",
-            order_id: order.id, // Generate order_id on server
-            handler: async (response) => {
-
-                console.log(response)
-                alert("Payment Successful")
+            name: "SNITCH (Urban Needs)", 
+            description: "Cart Checkout",
+            order_id: order.id,
+            handler: function (response) {
+                console.log("Payment ID:", response.razorpay_payment_id);
+                console.log("Order ID:", response.razorpay_order_id);
+                console.log("Signature:", response.razorpay_signature);
+                alert("Payment Successful! Order Placed.");
             },
             prefill: {
-                name: user?.fullname,
+                name: user?.fullname || (user?.firstName ? user.firstName + " " + user.lastName : "Guest Customer"),
                 email: user?.email,
-                contact: user?.contact,
+                contact: user?.contact || "9999999999", 
             },
             theme: {
-                color: tokens.primary,
+                color: "#000000",
             },
         };
-
+        
         const razorpayInstance = new Razorpay(options);
+
+        razorpayInstance.on('payment.failed', function (response) {
+            console.error("Payment Failed:", response.error.description);
+            showToast(`Payment failed: ${response.error.description}`);
+        });
+
         razorpayInstance.open();
+    
+
+    } catch (error) {
+        console.error("Checkout Error:", error);
+        showToast("An error occurred while loading checkout.");
     }
-
-
-
-    /* ─── Empty state ─── */
-    if (!cart?.items?.length) {
-        return (
-            <>
-                <link
-                    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
-                    rel="stylesheet"
-                />
-                <div
-                    className="min-h-screen flex flex-col"
-                    style={{ backgroundColor: tokens.surface, fontFamily: "'Inter', sans-serif" }}
-                >
-                    {/* Nav */}
-                    <nav
-                        className="px-8 lg:px-16 xl:px-24 pt-10 pb-6 flex items-center justify-between"
-                        style={{ borderBottom: `1px solid ${tokens.surfaceHighest}` }}
-                    >
-                        <Link
-                            to="/"
-                            className="text-sm font-medium tracking-[0.35em] uppercase hover:opacity-80 transition-opacity"
-                            style={{ fontFamily: "'Cormorant Garamond', serif", color: tokens.primary }}
-                        >
-                            Snitch.
-                        </Link>
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="text-[10px] uppercase tracking-[0.22em] font-medium transition-colors hover:opacity-70"
-                            style={{ color: tokens.secondary }}
-                        >
-                            Return to Archive
-                        </button>
-                    </nav>
-
-                    <div className="flex-1 flex flex-col items-center justify-center gap-6 pb-24 px-8">
-                        <p
-                            className="text-5xl md:text-6xl font-light leading-tight"
-                            style={{ fontFamily: "'Cormorant Garamond', serif", color: tokens.onSurface }}
-                        >
-                            Your selection is empty.
-                        </p>
-                        <p
-                            className="text-[10px] uppercase tracking-[0.22em]"
-                            style={{ color: tokens.muted }}
-                        >
-                            Curate your collection
-                        </p>
-                        <Link
-                            to="/"
-                            className="mt-4 px-10 py-4 text-[11px] uppercase tracking-[0.25em] font-medium transition-all duration-300"
-                            style={{
-                                backgroundColor: tokens.onSurface,
-                                color: tokens.surface,
-                            }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.backgroundColor = tokens.primary
-                                e.currentTarget.style.color = tokens.onSurface
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.backgroundColor = tokens.onSurface
-                                e.currentTarget.style.color = tokens.surface
-                            }}
-                        >
-                            Explore the Archive
-                        </Link>
-                    </div>
-                </div>
-            </>
-        )
-    }
-
-    const subtotal = cart.items.reduce((acc, item) => {
-        const amount = item?.price?.amount ?? 0
-        const qty = quantities[item?.product?._id] ?? item?.quantity ?? 1
-        return acc + amount * qty
-    }, 0)
-
-    return (
-        <>
-            {/* Google Fonts */}
-            <link
-                href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
-                rel="stylesheet"
-            />
-
-            <div
-                className="min-h-screen pb-24 selection:bg-[#C9A96E]/30"
-                style={{ backgroundColor: tokens.surface, fontFamily: "'Inter', sans-serif" }}
-            >
-
-
-                {/* ── Main Content ── */}
-                <div className="max-w-7xl mx-auto px-8 lg:px-16 xl:px-24 pt-12 lg:pt-20">
-                    <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
-
-                        {/* ═══════════════════════════════════════════════
-                            LEFT COLUMN — Cart Items (65%)
-                        ═══════════════════════════════════════════════ */}
-                        <div className="w-full lg:w-[65%]">
-                            {/* Heading */}
-                            <div className="mb-10">
-                                <h1
-                                    className="font-light leading-[1.05] mb-2"
-                                    style={{
-                                        fontFamily: "'Cormorant Garamond', serif",
-                                        color: tokens.onSurface,
-                                        fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
-                                    }}
-                                >
-                                    Your Selection
-                                </h1>
-                                <p
-                                    className="text-[10px] uppercase tracking-[0.24em] font-medium"
-                                    style={{ color: tokens.muted }}
-                                >
-                                    {cart?.items?.length} {cart?.items?.length === 1 ? 'piece' : 'pieces'}
-                                </p>
-                            </div>
-
-                            {/* ── Cart Item List ── */}
-                            <div className="flex flex-col gap-6">
-                                {cart.items.map(item => {
-                                    const { product, variant: variantId, price, product: { _id } } = item
-                                    const variantDetail = getVariantDetails(product, variantId)
-                                    const imageUrl = getDisplayImage(product, variantDetail)
-                                    const displayPrice = price ?? variantDetail?.price ?? product?.price
-                                    const qty = quantities[_id] ?? item.quantity ?? 1
-                                    const attributes = variantDetail?.attributes ?? {}
-                                    const stock = variantDetail?.stock
-                                    const variantPrice = variantDetail?.price
-                                    return (
-                                        <div
-                                            key={_id}
-                                            className="flex gap-6 md:gap-8 p-6 md:p-8 transition-all duration-300"
-                                            style={{ backgroundColor: tokens.surfaceLow }}
-                                        >
-                                            {/* Product Image */}
-                                            <div
-                                                className="flex-shrink-0 overflow-hidden"
-                                                style={{
-                                                    width: 'clamp(100px, 15vw, 160px)',
-                                                    aspectRatio: '4/5',
-                                                    backgroundColor: tokens.surfaceHighest,
-                                                }}
-                                            >
-                                                {imageUrl ? (
-                                                    <img
-                                                        src={imageUrl}
-                                                        alt={product?.title}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div
-                                                        className="w-full h-full flex items-center justify-center"
-                                                        style={{ backgroundColor: tokens.surfaceHigh }}
-                                                    />
-                                                )}
-                                            </div>
-
-                                            {/* Product Info */}
-                                            <div className="flex-1 flex flex-col justify-between">
-                                                <div>
-                                                    {/* Title */}
-                                                    <h2
-                                                        className="font-light leading-tight mb-3"
-                                                        style={{
-                                                            fontFamily: "'Cormorant Garamond', serif",
-                                                            fontSize: 'clamp(1.2rem, 2.5vw, 1.6rem)',
-                                                            color: tokens.onSurface,
-                                                        }}
-                                                    >
-                                                        {product?.title}
-                                                    </h2>
-
-                                                    {/* Variant Attribute Chips */}
-                                                    {Object.keys(attributes).length > 0 && (
-                                                        <div className="flex flex-wrap gap-2 mb-3">
-                                                            {Object.entries(attributes).map(([key, val]) => (
-                                                                <span
-                                                                    key={key}
-                                                                    className="px-3 py-1 text-[9px] uppercase tracking-[0.18em] font-medium"
-                                                                    style={{
-                                                                        backgroundColor: tokens.primary,
-                                                                        color: '#fff',
-                                                                    }}
-                                                                >
-                                                                    {val}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Price */}
-                                                    <p
-                                                        className="text-[11px] uppercase tracking-[0.2em] font-medium mb-1"
-                                                        style={{ color: tokens.onSurface }}
-                                                    >
-                                                        {displayPrice
-                                                            ? formatCurrency(displayPrice.amount, displayPrice.currency)
-                                                            : '—'}
-                                                    </p>
-
-                                                    {/* Stock */}
-                                                    {stock !== undefined && (
-                                                        <p
-                                                            className="text-[10px] uppercase tracking-[0.15em] mb-4"
-                                                            style={{ color: tokens.muted }}
-                                                        >
-                                                            {stock > 0 ? `${stock} in stock` : 'Out of stock'}
-                                                        </p>
-                                                    )}
-                                                    {
-                                                        displayPrice.amount !== variantPrice.amount && (
-                                                            <>
-                                                                {displayPrice.amount > variantPrice.amount
-                                                                    ? <p className="text-[10px] uppercase tracking-[0.15em] mb-4 text-green-800 font-bold" > you will get this at {formatCurrency(variantPrice.amount, variantPrice.currency)} save {Math.abs(variantPrice.amount - displayPrice.amount)}.  </p>
-                                                                    : <p className="text-[10px] uppercase tracking-[0.15em] mb-4 text-red-600 font-bold" > Warning this product will cost you {Math.abs(variantPrice.amount - displayPrice.amount)} more.  </p>
-                                                                }
-                                                            </>
-                                                        )
-                                                    }
-                                                </div>
-
-                                                {/* Bottom Row: Quantity + Remove */}
-                                                <div className="flex items-center justify-between flex-wrap gap-4">
-                                                    {/* Quantity Stepper */}
-                                                    <div
-                                                        className="flex items-center"
-                                                        style={{ border: `1px solid ${tokens.outlineVariant}` }}
-                                                    >
-                                                        <button
-                                                            id={`qty-dec-${_id}`}
-                                                            onClick={() => changeQty(_id, -1)}
-                                                            className="w-9 h-9 flex items-center justify-center text-sm font-light transition-colors hover:opacity-60"
-                                                            style={{ color: tokens.onSurface, borderRight: `1px solid ${tokens.outlineVariant}` }}
-                                                            aria-label="Decrease quantity"
-                                                        >
-                                                            −
-                                                        </button>
-                                                        <span
-                                                            className="w-10 text-center text-[11px] tracking-[0.12em] font-medium select-none"
-                                                            style={{ color: tokens.onSurface }}
-                                                        >
-                                                            {qty}
-                                                        </span>
-                                                        <button
-                                                            id={`qty-inc-${_id}`}
-                                                            onClick={() => handleIncrementCartItem({ productId: _id, variantId })}
-                                                            className="w-9 h-9 flex items-center justify-center text-sm font-light transition-colors hover:opacity-60"
-                                                            style={{ color: tokens.onSurface, borderLeft: `1px solid ${tokens.outlineVariant}` }}
-                                                            aria-label="Increase quantity"
-                                                        >
-                                                            +
-                                                        </button>
-                                                    </div>
-
-                                                    {/* Remove */}
-                                                    <button
-                                                        id={`remove-${_id}`}
-                                                        className="text-[10px] uppercase tracking-[0.22em] font-medium transition-all duration-200 hover:underline hover:opacity-70"
-                                                        style={{ color: tokens.muted }}
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-
-                            {/* Policy strip */}
-                            <div
-                                className="mt-10 pt-8 grid grid-cols-3 gap-4 text-[10px] uppercase tracking-[0.12em]"
-                                style={{ borderTop: `1px solid ${tokens.surfaceHighest}`, color: tokens.muted }}
-                            >
-                                <div>
-                                    <p className="font-medium mb-1" style={{ color: tokens.secondary }}>Shipping</p>
-                                    <p>Complimentary over INR 15,000</p>
-                                </div>
-                                <div>
-                                    <p className="font-medium mb-1" style={{ color: tokens.secondary }}>Returns</p>
-                                    <p>Within 14 days of delivery</p>
-                                </div>
-                                <div>
-                                    <p className="font-medium mb-1" style={{ color: tokens.secondary }}>Authenticity</p>
-                                    <p>100% Guaranteed</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ═══════════════════════════════════════════════
-                            RIGHT COLUMN — Order Summary (35%, Sticky)
-                        ═══════════════════════════════════════════════ */}
-                        <div className="w-full lg:w-[35%] lg:sticky lg:top-28">
-                            <div
-                                className="p-8"
-                                style={{ backgroundColor: tokens.surfaceLowest, boxShadow: '0 20px 40px rgba(27,28,26,0.04)' }}
-                            >
-                                {/* Heading */}
-                                <h2
-                                    className="font-light mb-6"
-                                    style={{
-                                        fontFamily: "'Cormorant Garamond', serif",
-                                        fontSize: '1.75rem',
-                                        color: tokens.onSurface,
-                                    }}
-                                >
-                                    The Total
-                                </h2>
-
-                                {/* Tonal divider */}
-                                <div className="mb-6" style={{ height: 1, backgroundColor: tokens.surfaceHighest }} />
-
-                                {/* Line items */}
-                                <div className="flex flex-col gap-4 mb-6">
-                                    <div className="flex justify-between items-baseline">
-                                        <span
-                                            className="text-[10px] uppercase tracking-[0.18em]"
-                                            style={{ color: tokens.secondary }}
-                                        >
-                                            Subtotal
-                                        </span>
-                                        <span
-                                            className="text-[11px] uppercase tracking-[0.12em] font-medium"
-                                            style={{ color: tokens.onSurface }}
-                                        >
-                                            {formatCurrency(subtotal)}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex justify-between items-baseline">
-                                        <span
-                                            className="text-[10px] uppercase tracking-[0.18em]"
-                                            style={{ color: tokens.secondary }}
-                                        >
-                                            Shipping
-                                        </span>
-                                        <span
-                                            className="text-[10px] uppercase tracking-[0.1em]"
-                                            style={{ color: cart.totalPrice >= 15000 ? '#5a7a5a' : tokens.muted }}
-                                        >
-                                            {cart.totalPrice >= 15000 ? 'Complimentary' : `Complimentary over INR 15,000`}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex justify-between items-baseline">
-                                        <span
-                                            className="text-[10px] uppercase tracking-[0.18em]"
-                                            style={{ color: tokens.secondary }}
-                                        >
-                                            Duties & Taxes
-                                        </span>
-                                        <span
-                                            className="text-[10px] uppercase tracking-[0.1em]"
-                                            style={{ color: tokens.muted }}
-                                        >
-                                            Included
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Total divider */}
-                                <div className="mb-6" style={{ height: 1, backgroundColor: tokens.surfaceHighest }} />
-
-                                {/* Grand Total */}
-                                <div className="flex justify-between items-baseline mb-8">
-                                    <span
-                                        className="text-[10px] uppercase tracking-[0.22em] font-medium"
-                                        style={{ color: tokens.onSurface }}
-                                    >
-                                        Total
-                                    </span>
-                                    <span
-                                        className="text-base uppercase tracking-[0.18em] font-medium"
-                                        style={{ color: tokens.onSurface }}
-                                    >
-                                        {formatCurrency(cart.totalPrice)}
-                                    </span>
-                                </div>
-
-                                {/* Primary CTA */}
-                                <button
-                                    id="proceed-checkout"
-                                    className="w-full py-4 mb-3 text-[11px] uppercase tracking-[0.25em] font-medium transition-all duration-300"
-                                    style={{
-                                        backgroundColor: tokens.onSurface,
-                                        color: tokens.surface,
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.backgroundColor = tokens.primary
-                                        e.currentTarget.style.color = tokens.onSurface
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.backgroundColor = tokens.onSurface
-                                        e.currentTarget.style.color = tokens.surface
-                                    }}
-                                    onClick={handleCheckout}
-                                >
-                                    Proceed to Checkout
-                                </button>
-
-                                {/* Secondary ghost CTA */}
-                                <button
-                                    id="continue-shopping"
-                                    className="w-full py-4 text-[11px] uppercase tracking-[0.25em] font-medium transition-all duration-300"
-                                    style={{
-                                        backgroundColor: 'transparent',
-                                        border: `1px solid ${tokens.outlineVariant}`,
-                                        color: tokens.onSurface,
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.borderColor = tokens.primary
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.borderColor = tokens.outlineVariant
-                                    }}
-                                    onClick={() => navigate('/')}
-                                >
-                                    Continue Shopping
-                                </button>
-
-                                {/* Policy footnote */}
-                                <p
-                                    className="mt-6 text-center text-[9px] uppercase tracking-[0.14em] leading-relaxed"
-                                    style={{ color: tokens.muted }}
-                                >
-                                    Free returns within 14 days · Authenticity guaranteed
-                                </p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </>
-    )
 }
 
-export default Cart
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
+
+  return (
+    <div className="min-h-screen bg-white font-sans flex flex-col relative">
+      
+      {toastMessage && (
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] bg-black text-white px-6 py-3 shadow-2xl flex items-center gap-4 animate-fade-in-down transition-all">
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="text-red-400">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span className="text-sm font-semibold tracking-wide">{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="ml-2 text-gray-400 hover:text-white transition-colors">
+            ✕
+          </button>
+        </div>
+      )}
+
+      <Navbar />
+      
+      <main className="flex-1 max-w-[1200px] mx-auto w-full px-6 md:px-12 py-12">
+        <div className="flex items-end justify-between mb-10">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-950 tracking-tight">Your cart</h1>
+          <Link to="/" className="text-sm font-medium text-gray-600 underline hover:text-black">Continue shopping</Link>
+        </div>
+
+        {cartItems?.length > 0 ? (
+          <>
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-4 pb-4 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em]">
+              <div className="col-span-6">Product</div>
+              <div className="col-span-3 text-center">Quantity</div>
+              <div className="col-span-3 text-right">Total</div>
+            </div>
+
+            {/* Cart Items */}
+            <div className="flex flex-col gap-8 py-8 border-b border-gray-200">
+              {cartItems.map((item, index) => {
+                const product = item.product;
+                const variantId = item.variant;
+                const variant = product?.variants?.find(v => v._id === variantId);
+                
+                // FIX: Added optional chaining and fallbacks to prevent "toUpperCase" crashes
+                const size = variant?.size || 'S';
+                const color = variant?.color || 'N/A';
+
+                return (
+                  <div key={index} className="grid grid-cols-12 gap-4 items-center">
+                    
+                    {/* Product Info */}
+                    <div className="col-span-6 flex gap-6 items-start">
+                      <div className="w-24 h-32 bg-gray-100 flex-shrink-0">
+                        {product?.images?.[0] ? (
+                          <img src={product.images[0].url} alt={product.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200"></div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold text-gray-400 tracking-[0.1em] uppercase">URBANNEEDSINDIA</span>
+                        <Link to={`/product/${product?._id}`} className="text-base font-black text-gray-900 hover:text-gray-600 uppercase">
+                          {product?.title}
+                        </Link>
+                        <span className="text-sm text-gray-600 mt-1">Rs. {Number(item.price?.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-sm text-gray-500 mt-2">Size: {size?.toUpperCase()}</span>
+                        <span className="text-sm text-gray-500">Color: {color}</span>
+                      </div>
+                    </div>
+
+                    {/* Quantity Selector */}
+                    <div className="col-span-3 flex items-center justify-center gap-4">
+                      <div className="flex items-center border border-gray-300 w-fit h-10">
+                        <button 
+                          onClick={async () => {
+                            if (item.quantity > 1) {
+                              await handleUpdateCartItem({ productId: product._id, variantId, quantity: item.quantity - 1 });
+                            } else {
+                              await handleRemoveCartItem({ productId: product._id, variantId });
+                            }
+                          }}
+                          className="w-10 h-full flex justify-center items-center text-gray-500 hover:bg-gray-50 transition-colors"
+                        >−</button>
+                        <span className="w-10 h-full flex justify-center items-center text-sm font-medium border-x border-gray-300">{item.quantity}</span>
+                        <button 
+                          onClick={async () => {
+                            const maxStock = variant?.stock || 0;
+                            if (item.quantity + 1 > maxStock) {
+                              showToast(`Sorry! Only ${maxStock} items left in stock.`);
+                              return;
+                            }
+                            await handleUpdateCartItem({ productId: product._id, variantId, quantity: item.quantity + 1 });
+                          }}
+                          className="w-10 h-full flex justify-center items-center text-gray-500 hover:bg-gray-50 transition-colors"
+                        >+</button>
+                      </div>
+                      <button 
+                        onClick={() => handleRemoveCartItem({ productId: product._id, variantId })}
+                        className="text-gray-400 hover:text-red-500 transition-colors" title="Remove item"
+                      >
+                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                          <path d="M3 6h18M19 6l-1 14H6L5 6m4 0V4a2 2 0 012-2h2a2 2 0 012 2v2m-5 5v6m4-6v6"/>
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Total Price */}
+                    <div className="col-span-3 text-right">
+                      <span className="text-base font-medium text-gray-900">
+                        Rs. {(Number(item.price?.amount) * item.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer / Checkout section */}
+            <div className="flex flex-col md:flex-row justify-between items-start mt-8 gap-8">
+              <div className="w-full md:w-1/2">
+                <p className="text-sm text-gray-600 mb-3 block">Order special instructions</p>
+                <textarea 
+                  className="w-full border border-gray-300 p-3 h-32 text-sm focus:outline-none focus:border-black transition-colors resize-y"
+                  placeholder=""
+                ></textarea>
+              </div>
+              <div className="w-full md:w-1/2 flex flex-col items-end">
+                <div className="flex items-end gap-5 mb-4">
+                  <span className="text-xl font-bold text-gray-900">Estimated total</span>
+                  <span className="text-2xl font-light text-gray-800">
+                    Rs. {total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 text-right mb-6 max-w-sm">
+                  Tax included. <Link to="#" className="underline text-gray-600">Shipping</Link> and discounts calculated at checkout.
+                </p>
+                <button
+                 onClick={handleCheckout}
+                 className="w-full max-w-[300px] bg-black text-white text-[13px] font-bold uppercase tracking-[0.15em] py-4 hover:bg-gray-900 transition-colors active:scale-[0.99]">
+                  Check out
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="py-20 text-center flex flex-col items-center border-t border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Your cart is currently empty.</h2>
+            <Link to="/" className="bg-black text-white text-sm font-bold uppercase tracking-[0.1em] px-8 py-3 hover:bg-gray-900 transition-colors">
+              Continue shopping
+            </Link>
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+};
+
+export default Cart;
