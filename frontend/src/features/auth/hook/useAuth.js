@@ -1,38 +1,38 @@
-import {setUser, setLoading, setError} from "../store/auth.slice"
-import { register, login, getMe } from "../service/auth.api"
+import { setLoading,setUser } from "../store/auth.slice";
+import { registerUser,loginUser, getUser } from "../service/auth.api";
 import { useDispatch } from "react-redux";
 
-
 export const useAuth = () => {
+    const dispatch = useDispatch();
+    
+    async function handleRegister({email,contact,password,fullname,isSeller=false}){
+            
+        const response = await registerUser({email,contact,password,fullname,isSeller})
+        dispatch(setUser(response.user))
 
-    const dispatch = useDispatch()
-
-
-    async function handleRegister(data) {
-
-        const res = await register(data)
-        dispatch(setUser(res.user))
-        return res.user
+        return response.user
     }
 
-    async function handleLogin(data) {
+    async function handleLogin({email,password}){
+        
+        const response = await loginUser({email,password})
+        dispatch(setUser(response.user))
 
-        const res = await login(data)
-        dispatch(setUser(res.user))
-        return res.user
+        return response.user
     }
 
-    async function handleGetMe() {
-        try {
+    async function handleGetMe(){
+        try{
+
             dispatch(setLoading(true))
-            const data = await getMe()
+            const data = await getUser()
             dispatch(setUser(data.user))
-        } catch (err) {
+        }catch(err){
             console.log(err)
-        } finally {
+        }finally{
             dispatch(setLoading(false))
         }
     }
 
-    return { handleRegister, handleLogin, handleGetMe }
+    return {handleRegister, handleLogin ,handleGetMe}
 }

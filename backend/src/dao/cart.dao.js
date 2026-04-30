@@ -1,4 +1,4 @@
-import cartModel from "../models/cart.model.js";
+import cartModel from '../model/cart.model.js';
 import mongoose from "mongoose";
 
 export async function getCartDetails(userId) {
@@ -8,16 +8,21 @@ export async function getCartDetails(userId) {
                 user: new mongoose.Types.ObjectId(userId)
             }
         },
+        // Unwind the items array
         { $unwind: { path: '$items' } },
+        
+        // Lookup the product details
         {
             $lookup: {
-                from: 'products',
+                from: 'products', // Must match your MongoDB collection name (usually lowercase plural)
                 localField: 'items.product',
                 foreignField: '_id',
                 as: 'items.product'
             }
         },
         { $unwind: { path: '$items.product' } },
+        
+        // Unwind the variants array to match the specific variant
         {
             $unwind: { path: '$items.product.variants' }
         },
@@ -31,20 +36,24 @@ export async function getCartDetails(userId) {
                 }
             }
         },
+        
+        // Calculate item price
         {
             $addFields: {
                 itemPrice: {
                     price: {
                         $multiply: [
                             '$items.quantity',
-                            '$items.product.variants.price.amount'
+                            '$items.price.amount' // ✅ FIXED: Uses the price stored in the cart item
                         ]
                     },
-                    currency:
-                        '$items.product.variants.price.currency'
+                    // Note: Depending on your priceSchema, this might be .Currency instead of .currency
+                    currency: '$items.price.currency' 
                 }
             }
         },
+        
+        // Regroup back into a single cart object
         {
             $group: {
                 _id: '$_id',
@@ -55,7 +64,7 @@ export async function getCartDetails(userId) {
                 items: { $push: '$items' }
             }
         }
-    ]))[ 0 ]
+    ]))[0];
 
-    return cart
+    return cart;
 }
