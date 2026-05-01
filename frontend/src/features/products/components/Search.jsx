@@ -1,71 +1,91 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router';
 
-// Debounce hook
+/* ─── Debounce hook ─────────────────────────────────────────── */
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
     return () => clearTimeout(handler);
   }, [value, delay]);
   return debouncedValue;
 }
 
+/* ─── Typewriter hook (same as Navbar) ──────────────────────── */
+const WORDS = ['jerseys', 'tees', 'pants', 'hoodies', 'polos', 'tank tops'];
+
+const useTypewriter = () => {
+  const [charIndex, setCharIndex] = useState(0);
+  const [wordIndex, setWordIndex] = useState(0);
+  const [deleting,  setDeleting]  = useState(false);
+  const [displayed, setDisplayed] = useState('');
+
+  useEffect(() => {
+    const current = WORDS[wordIndex];
+    let timeout;
+
+    if (!deleting && charIndex < current.length) {
+      timeout = setTimeout(() => {
+        setDisplayed(current.slice(0, charIndex + 1));
+        setCharIndex(i => i + 1);
+      }, 100);
+    } else if (!deleting && charIndex === current.length) {
+      timeout = setTimeout(() => setDeleting(true), 1400);
+    } else if (deleting && charIndex > 0) {
+      timeout = setTimeout(() => {
+        setDisplayed(current.slice(0, charIndex - 1));
+        setCharIndex(i => i - 1);
+      }, 60);
+    } else if (deleting && charIndex === 0) {
+      setDeleting(false);
+      setWordIndex(i => (i + 1) % WORDS.length);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [charIndex, deleting, wordIndex]);
+
+  return displayed;
+};
+
+/* ─── Icons ─────────────────────────────────────────────────── */
 const ClearIcon = () => (
   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-    <circle cx="12" cy="12" r="9" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 9l-6 6m0-6l6 6" />
+    <circle cx="12" cy="12" r="9"/>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 9l-6 6m0-6l6 6"/>
   </svg>
 );
-
 const SearchMagnifyIcon = () => (
   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
   </svg>
 );
-
 const CloseIcon = () => (
-  <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
   </svg>
 );
 
+/* ─── Search Component ──────────────────────────────────────── */
 const Search = ({ onClose }) => {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
-  
-  // Custom Debounce and Throttle
+  const word = useTypewriter();
+
   const debouncedQuery = useDebounce(query, 300);
-  const [throttledQuery, setThrottledQuery] = useState('');
-  const lastRan = useRef(Date.now());
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      if (Date.now() - lastRan.current >= 500) {
-        setThrottledQuery(query);
-        lastRan.current = Date.now();
-      }
-    }, 500 - (Date.now() - lastRan.current));
-    return () => clearTimeout(handler);
-  }, [query]);
-
-  // Using the debounced query for standard search fetching
   const activeQuery = debouncedQuery.trim();
 
-  // Load products from Redux state for local filtering
   const products = useSelector(state => state.product?.products) || [];
 
   const filteredProducts = activeQuery
-    ? products.filter(p =>
-        p.title?.toLowerCase().includes(activeQuery.toLowerCase()) ||
-        p.category?.toLowerCase().includes(activeQuery.toLowerCase())
-      ).slice(0, 5)
+    ? products
+        .filter(p =>
+          p.title?.toLowerCase().includes(activeQuery.toLowerCase()) ||
+          p.category?.toLowerCase().includes(activeQuery.toLowerCase())
+        )
+        .slice(0, 5)
     : [];
 
-  // Suggestions = products whose titles match the query, deduped by title
   const suggestions = activeQuery
     ? products
         .filter(p => p.title?.toLowerCase().includes(activeQuery.toLowerCase()))
@@ -83,37 +103,43 @@ const Search = ({ onClose }) => {
 
   return (
     <div className="w-full max-w-3xl mx-auto flex items-start gap-4">
-      {/* Container for input and dropdown */}
-      <div className="relative flex-1 group z-50">
-        
-        {/* Input Bar */}
-        <div className="relative bg-white border border-black flex flex-col justify-center min-h-14 w-full">
+
+      {/* Input + Dropdown */}
+      <div className="relative flex-1 z-50">
+
+        {/* Input bar */}
+        <div className="relative bg-white border border-black flex items-center min-h-14 w-full">
+
+          {/* Typewriter placeholder — only visible when input is empty */}
+          {!query && (
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[13px] text-gray-400 flex items-center whitespace-nowrap select-none">
+              Search for&nbsp;
+              <span className="text-gray-600">{word}</span>
+              <span
+                className="inline-block w-[1.5px] h-3.5 bg-gray-500 ml-0.5 align-middle"
+                style={{ animation: 'blink 1s step-end infinite' }}
+              />
+              <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
+            </span>
+          )}
+
           <input
             id="search-input"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
-            className="peer w-full bg-transparent pr-24 pl-4 pt-5 pb-1 text-[15px] font-medium outline-none text-black placeholder-transparent"
-            placeholder="Search"
+            className="w-full bg-transparent pr-24 pl-4 py-3 text-[15px] font-medium outline-none text-black"
+            placeholder=""
           />
-          {/* Floating Label */}
-          <label
-            htmlFor="search-input"
-            className="absolute left-4 top-2 text-[10px] text-blue-800 transition-all 
-                       peer-placeholder-shown:text-[13px] peer-placeholder-shown:text-gray-500 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 
-                       peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-blue-800 pointer-events-none"
-          >
-            Search
-          </label>
 
-          {/* Icons container inside input */}
+          {/* Right icons */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-3">
             {query && (
-              <button 
+              <button
                 onClick={() => setQuery('')}
                 className="text-gray-400 hover:text-black transition-colors"
-                aria-label="Clear Search"
+                aria-label="Clear"
               >
                 <ClearIcon />
               </button>
@@ -125,12 +151,12 @@ const Search = ({ onClose }) => {
           </div>
         </div>
 
-        {/* Dropdown Menu */}
+        {/* Dropdown */}
         {activeQuery && (
           <div className="absolute top-full left-0 w-full bg-white border border-t-0 border-gray-200 shadow-[0_15px_30px_-5px_rgba(0,0,0,0.1)] z-50">
             <div className="flex flex-col sm:flex-row p-6 gap-8">
-              
-              {/* Suggestions Column */}
+
+              {/* Suggestions */}
               <div className="flex-1">
                 <h3 className="text-[10px] font-bold text-gray-400 tracking-[0.15em] uppercase mb-4">Suggestions</h3>
                 {suggestions.length > 0 ? (
@@ -141,10 +167,10 @@ const Search = ({ onClose }) => {
                           onClick={() => handleSuggestionClick(sug)}
                           className="text-[15px] font-black text-gray-900 hover:text-black normal-case text-left w-full"
                         >
-                          {sug.title.split(new RegExp(`(${activeQuery})`, 'gi')).map((part, index) =>
+                          {sug.title.split(new RegExp(`(${activeQuery})`, 'gi')).map((part, idx) =>
                             part.toLowerCase() === activeQuery.toLowerCase()
-                              ? <span key={index} className="text-gray-400">{part}</span>
-                              : <span key={index}>{part}</span>
+                              ? <span key={idx} className="text-gray-400">{part}</span>
+                              : <span key={idx}>{part}</span>
                           )}
                         </button>
                       </li>
@@ -155,20 +181,27 @@ const Search = ({ onClose }) => {
                 )}
               </div>
 
-              {/* Products Column */}
+              {/* Products */}
               <div className="flex-1">
                 <h3 className="text-[10px] font-bold text-gray-400 tracking-[0.15em] uppercase mb-4">Products</h3>
                 <div className="flex flex-col gap-5">
                   {filteredProducts.length > 0 ? filteredProducts.map(product => (
-                    <Link key={product._id} to={`/product/${product._id}`} onClick={onClose} className="flex gap-4 group items-center">
+                    <Link
+                      key={product._id}
+                      to={`/product/${product._id}`}
+                      onClick={onClose}
+                      className="flex gap-4 group items-center"
+                    >
                       <div className="w-12 h-16 bg-gray-100 shrink-0">
-                        {product.images?.[0] ? (
-                          <img src={product.images[0].url} alt={product.title} className="w-full h-full object-cover" />
-                        ) : null}
+                        {product.images?.[0] && (
+                          <img src={product.images[0].url} alt={product.title} className="w-full h-full object-cover"/>
+                        )}
                       </div>
-                      <div className="flex flex-col justify-center">
+                      <div>
                         <p className="text-[13px] font-black text-gray-900 group-hover:underline capitalize mb-1">{product.title}</p>
-                        <p className="text-xs text-gray-500 font-medium tracking-wide">Rs. {Number(product.price?.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                        <p className="text-xs text-gray-500 font-medium">
+                          Rs. {Number(product.price?.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </p>
                       </div>
                     </Link>
                   )) : (
@@ -178,21 +211,21 @@ const Search = ({ onClose }) => {
               </div>
             </div>
 
-            {/* Bottom Footer Action */}
+            {/* Footer */}
             <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer group">
               <span className="text-[13px] font-black text-gray-900">Search for "{activeQuery}"</span>
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 group-hover:text-black transition-colors" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-7-7l7 7-7 7" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-7-7l7 7-7 7"/>
               </svg>
             </div>
           </div>
         )}
       </div>
 
-      {/* External Close button */}
-      <button 
+      {/* Close */}
+      <button
         onClick={onClose}
-        className="text-gray-500 hover:text-black pt-3 transition-colors shrink-0"
+        className="text-gray-500 hover:text-black pt-3.5 transition-colors shrink-0"
         aria-label="Close search"
       >
         <CloseIcon />
