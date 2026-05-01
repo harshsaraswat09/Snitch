@@ -17,13 +17,10 @@ app.use(express.json())
 app.use(express.urlencoded({ extended:true }))
 app.use(cookieParser())
 app.use(cors({
-    origin: [
-    'http://localhost:5173',
-    process.env.FRONTEND_URL
-  ],
-    methods:["GET","POST","PUT","DELETE"],
-    credentials:true
-}))
+  origin: "https://only-fashion-eight.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 
 
 app.use(passport.initialize())
