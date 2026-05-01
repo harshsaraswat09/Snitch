@@ -98,7 +98,7 @@ export const googleCallback = async(req,res)=>{
 
     res.cookie("token",token) 
 
-    res.redirect("https://urbanneeds-1tgi.onrender.com/")
+    res.redirect("https://localhost:3000")
 }
 
 export async function getMe(req,res){   

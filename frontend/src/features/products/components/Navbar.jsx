@@ -103,14 +103,13 @@ const Navbar = () => {
   const totalQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const navLinks = [
-    { name: 'ALL PRODUCTS', category: null },
-    { name: 'NEW IN',      category: 'NEW IN'  },
-    { name: 'BOTTOMS',         category: 'BOTTOMS'     },
-    { name: 'DENIM',        category: 'DENIM'    },
-    { name: 'TOPS',      category: 'TOPS'  },
-    { name: 'SHIRTS',        category: 'SHIRTS'    },
-    { name: 'DRESSES',    category: 'DRESSES' },
-    { name: 'Sale',         category: 'sale', red: true },
+    { name: 'Home', category: null },
+    { name: 'Jerseys', category: 'jerseys' },
+    { name: 'Tees', category: 'tees' },
+    { name: 'Pants', category: 'pants' },
+    { name: 'Hoodies', category: 'hoodies' },
+    { name: 'Polos', category: 'polos' },
+    { name: 'Tank Tops', category: 'tanktops' },
   ];
 
   const handleNavClick = (category) => {
