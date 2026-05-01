@@ -1,8 +1,10 @@
 import axios from "axios"
 
+const BASE = import.meta.env.VITE_API_BASE_URL || ""
+
 const productApiInstance = axios.create({
-    baseURL:"/api/products",
-    withCredentials:true
+    baseURL: `${BASE}/api/products`,
+    withCredentials: true
 })
 
 export async function createproduct(formdata){
@@ -27,7 +29,7 @@ export async function getProductDetails(productId){
 
 export async function addProductVarient(productId ,newProductVarients){
 
-        const formData =new FormData()
+        const formData = new FormData()
 
         newProductVarients.images.forEach((image)=>{
                 formData.append("images",image.file)
@@ -35,8 +37,7 @@ export async function addProductVarient(productId ,newProductVarients){
         formData.append("size",newProductVarients.size)
         formData.append("stock",newProductVarients.stock)
 
-
-        const response = await productApiInstance.post(`/${productId}/variants` , formData)
+        const response = await productApiInstance.post(`/${productId}/variants`, formData)
         return response.data
 }
 

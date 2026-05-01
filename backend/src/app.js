@@ -22,7 +22,8 @@ app.use(express.urlencoded({ extended:true }))
 app.use(cookieParser())
 app.use(cors({
     origin: [
-    'http://localhost:5173',                   
+    'http://localhost:5173',
+    process.env.FRONTEND_URL
   ],
     methods:["GET","POST","PUT","DELETE"],
     credentials:true
@@ -46,4 +47,4 @@ app.use("*name",(req,res)=>{
 res.sendFile(path.join(__dirname, "..", "public", "index.html"));
 })
 
-export default app 
+export default app
