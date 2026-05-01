@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import Search from './Search';
 import { useSelector } from 'react-redux';
+import logo from "../../../../public/logo.png"
 
 /* ─── Icons ──────────────────────────────────────────────────── */
 const SearchIcon = () => (
@@ -136,9 +137,9 @@ const Navbar = () => {
             <span
               className="text-black select-none"
               style={{
-                fontFamily: '"Boldonse", "Helvetica Neue", Arial, sans-serif',
+                fontFamily: "Boldonse",
                 fontWeight: 900,
-                fontSize: '30px',
+                fontSize: '50px',
                 letterSpacing: '-0.01em',
                 lineHeight: 1,
               }}
