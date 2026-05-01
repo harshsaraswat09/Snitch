@@ -103,13 +103,13 @@ const Navbar = () => {
   const totalQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const navLinks = [
-    { name: 'All Products', category: null },
-    { name: 'Jerseys',      category: 'jerseys'  },
-    { name: 'Tees',         category: 'tees'     },
-    { name: 'Pants',        category: 'pants'    },
-    { name: 'Hoodies',      category: 'hoodies'  },
-    { name: 'Polos',        category: 'polos'    },
-    { name: 'Tank Tops',    category: 'tanktops' },
+    { name: 'ALL PRODUCTS', category: null },
+    { name: 'NEW IN',      category: 'NEW IN'  },
+    { name: 'BOTTOMS',         category: 'BOTTOMS'     },
+    { name: 'DENIM',        category: 'DENIM'    },
+    { name: 'TOPS',      category: 'TOPS'  },
+    { name: 'SHIRTS',        category: 'SHIRTS'    },
+    { name: 'DRESSES',    category: 'DRESSES' },
     { name: 'Sale',         category: 'sale', red: true },
   ];
 
@@ -153,9 +153,9 @@ const Navbar = () => {
             <TypewriterSearch onOpen={() => setSearchOpen(true)} />
 
             {/* Camera */}
-            <button className="hover:text-black transition-colors p-0.5" aria-label="Visual search">
+            {/* <button className="hover:text-black transition-colors p-0.5" aria-label="Visual search">
               <CameraIcon />
-            </button>
+            </button> */}
 
             {/* User */}
             <Link to="/login" className="hover:text-black transition-colors p-0.5" aria-label="Account">
@@ -163,7 +163,7 @@ const Navbar = () => {
             </Link>
 
             {/* Wishlist with pink badge */}
-            <Link to="/wishlist" className="hover:text-black transition-colors p-0.5 relative" aria-label="Wishlist">
+            {/* <Link to="/wishlist" className="hover:text-black transition-colors p-0.5 relative" aria-label="Wishlist">
               <WishlistIcon />
               <span
                 className="absolute -top-1.5 -right-1.5 text-white text-[9px] font-bold w-[16px] h-[16px] rounded-full flex items-center justify-center leading-none"
@@ -171,7 +171,7 @@ const Navbar = () => {
               >
                 0
               </span>
-            </Link>
+            </Link> */}
 
             {/* Cart */}
             <Link to="/cart" className="hover:text-black transition-colors p-0.5 relative" aria-label="Cart">
