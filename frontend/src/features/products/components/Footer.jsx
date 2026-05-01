@@ -37,7 +37,7 @@ const Footer = () => {
         {/* Brand Column */}
         <div className="flex flex-col gap-5">
           <div className="flex border-2  select-none w-fit text-md font-black uppercase tracking-[-0.02em]">
-            <span className="bg-white text-black px-1">URBAN</span>
+            <span className="bg-white text-black px-1">ONLY</span>
             <span className="bg-transparent text-white px-1">NEEDS</span>
           </div>
           <p className="text-sm text-white/50 leading-relaxed max-w-xs">
